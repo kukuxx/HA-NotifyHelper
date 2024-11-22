@@ -67,7 +67,7 @@
     description: ""
 ```
 
-- 建立完成後就可以透過ad_notify開始傳送通知傳送的格式跟使用notify服務一樣:
+- 建立完成後就可以透過自動化來呼叫ad_notify開始傳送通知，傳送的格式跟使用notify服務一樣:
 ```
     alias: test1
     description: ""

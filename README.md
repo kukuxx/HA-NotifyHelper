@@ -70,8 +70,8 @@
     description: ""
 ```
 
-- After the script is created, you can call **ad_notify** to start sending notifications. 
-  The format of the sending is the same as using the notify service:
+- After the creation is completed, you can call **ad_notify** through automation to start sending notifications,
+  the sending format is the same as using the notify service.
 ```
     alias: test1
     description: ""
