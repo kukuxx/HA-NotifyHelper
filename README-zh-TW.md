@@ -5,96 +5,84 @@
  [![Issues][issues-shield]][issues-url]
  [![License][license-shield]][license-url]
 
- [contributors-shield]: https://img.shields.io/github/contributors/kukuxx/HA-APP_Notification.svg?style=for-the-badge
- [contributors-url]: https://github.com/kukuxx/HA-APP_Notification/graphs/contributors
+ [contributors-shield]: https://img.shields.io/github/contributors/kukuxx/HA-NotifyHelper.svg?style=for-the-badge
+ [contributors-url]: https://github.com/kukuxx/HA-NotifyHelper/graphs/contributors
 
- [forks-shield]: https://img.shields.io/github/forks/kukuxx/HA-APP_Notification.svg?style=for-the-badge
- [forks-url]: https://github.com/kukuxx/HA-APP_Notification/network/members
+ [forks-shield]: https://img.shields.io/github/forks/kukuxx/HA-NotifyHelper.svg?style=for-the-badge
+ [forks-url]: https://github.com/kukuxx/HA-NotifyHelper/network/members
 
- [stars-shield]: https://img.shields.io/github/stars/kukuxx/HA-APP_Notification.svg?style=for-the-badge
- [stars-url]: https://github.com/kukuxx/HA-APP_Notification/stargazers
+ [stars-shield]: https://img.shields.io/github/stars/kukuxx/HA-NotifyHelper.svg?style=for-the-badge
+ [stars-url]: https://github.com/kukuxx/HA-NotifyHelper/stargazers
 
- [issues-shield]: https://img.shields.io/github/issues/kukuxx/HA-APP_Notification.svg?style=for-the-badge
- [issues-url]: https://github.com/kukuxx/HA-APP_Notification/issues
+ [issues-shield]: https://img.shields.io/github/issues/kukuxx/HA-NotifyHelper.svg?style=for-the-badge
+ [issues-url]: https://github.com/kukuxx/HA-NotifyHelper/issues
 
- [license-shield]: https://img.shields.io/github/license/kukuxx/HA-APP_Notification.svg?style=for-the-badge
- [license-url]: https://github.com/kukuxx/HA-APP_Notification/blob/main/LICENSE
+ [license-shield]: https://img.shields.io/github/license/kukuxx/HA-NotifyHelper.svg?style=for-the-badge
+ [license-url]: https://github.com/kukuxx/HA-NotifyHelper/blob/main/LICENSE
 
-# HA-Notificationhelper
+# HA-Notifyhelper
 
 - [English](/README.md) | [繁體中文](/README-zh-TW.md)
 
-> 這是一個**Home assistant自動化**，它使用 **AppDaemon** 來運行，
-  保存和格式化已發送到行動應用程式的通知以便查看，支持配置多人專屬通知面板。
-
-> 部分邏輯參考至 [這裡](https://forum.automata.id/t/topic/807) 
+> 這是一個**Home assistan自訂整合**，可以保存和格式化已發送到行動應用程式的通知以便查看，
+  支持配置多人專屬通知面板。
 
 > 感謝 **Mark Wu** 提供的想法與測試
-
-> [!NOTE]
-> 關於AppDaemon的安裝和配置請參考[這裡](https://appdaemon.readthedocs.io/en/latest/INSTALL.html)
 
 > [!NOTE]
 > 如果在使用過程中遇到bug，請開啟issues
 
 # 使用教學
 
-- 安裝好AppDaemon之後開啟AD的資料夾找到**appdaemon.yaml**檔案並修改配置如下:
-```
-    appdaemon:
-        latitude: 你的所在地緯度
-        longitude: 你的所在地經度
-        elevation: 你的所在地海拔
-        time_zone: 你的時區
-```
-> [!NOTE]
-> 關於appdaemon.yaml的其他配置請詳閱官網
+- 建議使用**HACS**安裝如果想手動安裝請將 **notifyhelper** 資料夾放在 <br>
+  **custom_components** 資料夾中，配置完 **configuration.yaml** 進行重啟
 
-- appdaemon.yaml如果配置完成將py檔放到AD資料夾下的**apps**資料夾並配置**apps.yaml**:
+  [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kukuxx&repository=HA-NotifyHelper&category=Integration)
+
+> [!NOTE]
+> 通知只能保存**40**則超過會從最舊的開始刪除
+
+- **configuration.yaml**配置:
 ```
-    notification_logger:
-        module: notification_logger
-        class: NotificationLogger
-        device: ["your device", "other device", "and others", ....]
+    notifyhelper:
+        devices:
+            - mobile_app_*
+            - mobile_app_your_device_id
+            - mobile_app_other_device_id
 ```
 > [!important]
-> 裝置ID格式必須為mobile_app_* (*為設備id)
+> 裝置ID格式必須為 <b><i>mobile_app_* (*為設備id)</i></b>
 
-- 之後到HA裡建立一個空白腳本名字必須為**ad_notify**:
-```
-    alias: ad_notify
-    sequence: []
-    description: ""
-```
-
-- 建立完成後就可以透過自動化來呼叫ad_notify開始傳送通知，傳送的格式跟使用notify服務一樣:
+- call service的方法和使用內建的**notify服務**一樣，以下是一個自動化範例:
 ```
     alias: test1
     description: ""
     triggers:
-        - trigger: event
-            event_type: ""
+    - trigger: event
+        event_type: ""
     conditions: []
     actions:
-        - sequence:
-            - action: script.ad_notify
+    - sequence:
+        - action: notifyhelper.send
             data:
-                title: Test Notification
-                message: This is a test message.
-              # target: 預設群發不用加上target
-              #         如要傳送單人通知請加上target: mobile_app_*
-                data:
-                    image: /local/1.jpg
-                    # 無需設置badge helper會自動設置
+            title: Test Notification
+            message: This is a test message.
+            target:
+            color: 
+            data:
+                image: /local/icon.png
     mode: single
 ```
-
+> [!NOTE]
+> **target: <i>如果要指定設備請填上ID，否則為群發</i>** <br>
+  **color: <i>要指定訊息顏色請填上 Hex rgb，預設為#c753e8</i>**
+   
 - Markdown card 配置:
 ```
     type: markdown
     content: |
         {% set notifications =
-        state_attr('sensor.mobile_app_*', 'notifications') %}
+        state_attr('sensor.mobile_app_*_log', 'notifications') %}
         {% if notifications %}
             
             <div><font size="5">{{ notifications }}</font></div>
@@ -106,19 +94,24 @@
 
 - Button card 配置:
 ```
+    show_name: true
+    show_icon: true
     type: button
     tap_action:
-        action: perform-action
-        perform_action: input_button.press
-        target:
-            entity_id: input_button.mobile_app_*
-        data: {}
-    entity: input_button.mobile_app_*
+    action: perform-action
+    perform_action: notifyhelper.read
+    target: {}
+    data:
+        target: mobile_app_*
+    entity: input_button.read
+    show_state: false
+    hold_action:
+    action: none
+    icon_height: 60px
 ```
 > [!NOTE]
-> 不一定要建立button卡片來完成已讀，
-  也可以用自動化進行服務呼叫，
-  保存的通知數和顏色可在code裡更改都有註釋，
+> 不一定要建立button卡片來完成已讀，<br>
+  也可以用自動化進行服務呼叫，<br>
   請按個人需求來配置。           
 
   
