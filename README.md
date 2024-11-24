@@ -20,43 +20,36 @@
  [license-shield]: https://img.shields.io/github/license/kukuxx/HA-NotifyHelper.svg?style=for-the-badge
  [license-url]: https://github.com/kukuxx/HA-NotifyHelper/blob/main/LICENSE
 
+![image](/doc/icon.png)
+
 # HA-Notifyhelper
 
-- [English](/README.md) | [繁體中文](/README-zh-TW.md)
+- [English](/README.md) | [繁體中文](/doc/README-zh-TW.md)
 
-> This is a **Home assistant custom integration** that can save and format
+> This is a <b>Home assistant custom integration</b> that can save and format
   notifications sent to mobile applications for viewing, and supports the configuration
   of multi-person exclusive notification panels.
 
-> Ideas and test provided by **Mark Wu**. Thanks!
+> Ideas and test provided by <b>Mark Wu</b>. Thanks!
 
 > [!NOTE]
 > If you encounter bugs during use, please open an issues
 
 # Instructions for use  
 
-- It is recommended to use **HACS** installation. If you want to install manually, 
-  <br>please put the **notifyhelper** folder in **custom_components** folder, 
-  <br>restart after configuring **configuration.yaml**
+- It is recommended to use <b>HACS</b> to install. If you want to install manually,
+  <br>please put the <b>notifyhelper</b> folder in <b>custom_components</b> folder, 
+  <br>and restart <b>Home assistant</b>.
 
   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kukuxx&repository=HA-NotifyHelper&category=Integration)
 
 > [!NOTE]
-> Only **40** notifications can be saved. If more than **40** notifications are stored,
-  <br>they will be deleted starting from the oldest one.
+> Only <b>40</b> notifications can be saved.
+  If more than <b>40</b> notifications are stored,
+  <br>they will be <b>deleted</b> starting from the <b>oldest one</b>.
 
-- **configuration.yaml** configuration:
-```
-    notifyhelper:
-        devices:
-            - mobile_app_*
-            - mobile_app_your_device_id
-            - mobile_app_other_device_id
-```
-> [!important]
-> The device ID format must be <b><i>mobile_app_* (* is the device ID)</i></b>
-
-- The method of calling service is the same as using the built-in notify service. <br>
+- The method of calling service is the same as using the 
+  <b>built-in notify service.</b><br>
   The following is an automation example:
 ```
     alias: test1
@@ -78,16 +71,16 @@
     mode: single
 ```
 > [!NOTE]
-> **target: <i>If you want to specify a device, fill in the ID,</i>**
-  **<i>otherwise it will be sent to all devices.</i>** <br>
-  **color: <i>To specify the message color please fill in Hex rgb, the default is #c753e8**</i>
+> <b>target: <i>The default is to send to all devices,
+  if you want to specify the device, please fill in the ID.</i></b><br>
+  <b>color: <i>To specify the message color please fill in Hex rgb, the default is #c753e8</i></b>
    
 - Markdown card configuration:
 ```
     type: markdown
     content: |
         {% set notifications =
-        state_attr('sensor.mobile_app_*', 'notifications') %}
+        state_attr('sensor.mobile_app_your_device_log', 'notifications') %}
         {% if notifications %}
             
             <div><font size="5">{{ notifications }}</font></div>
@@ -99,17 +92,27 @@
 
 - Button card configuration:
 ```
+    show_name: true
+    show_icon: true
     type: button
     tap_action:
-        action: perform-action
-        perform_action: input_button.press
-        target:
-            entity_id: input_button.mobile_app_*
-        data: {}
-    entity: input_button.mobile_app_*
+    action: perform-action
+    perform_action: notifyhelper.read
+    target: {}
+    data:
+        target: mobile_app_your_device
+    entity: input_button.read
+    show_state: false
+    hold_action:
+    action: none
+    icon_height: 60px
 ```
 > [!NOTE]
 > It is not necessary to create a button card to complete the reading，<br>
   service calls can also be made using automation. <br>
-  Please configure according to personal needs.          
+  Please configure according to personal needs.
+
+# Achievements Display   
+
+![gif](/doc/display.gif)
 
