@@ -9,12 +9,11 @@ _LOGGER = logging.getLogger(__name__)
 
 class NotificationHelper:
 
-    def __init__(self, hass, config):
+    def __init__(self, hass, devices):
         self.hass = hass
-        self.config = config
         self._lock = asyncio.Lock()
         self._notifications_dict: dict[str, list[list, int]] = {}
-        self._notify_device_id = self.config["notifyhelper"]["devices"]
+        self._notify_device_id = devices
 
     async def save_notifications_dict(self):
         """保存字典"""
@@ -70,6 +69,12 @@ class NotificationHelper:
         except Exception as e:
             _LOGGER.error(f"Initialization dict Error: {e}")
 
+    async def stop(self):
+        """刪除sensor"""
+        for device_id in self._notify_device_id:
+            state_entity_id = f"sensor.{device_id}_log"
+            self.hass.states.async_remove(state_entity_id)
+
     async def send_notification(self, data):
         """發送通知"""
         try:
@@ -117,6 +122,10 @@ class NotificationHelper:
                 async with self._lock:
                     await self.save_notifications_dict()
                 await self.update_notification_log(device_id)
+            else:
+                _LOGGER.error(
+                    f"The device {device_id} does not found. Please check whether the device ID is correct."
+                )
 
         except KeyError as e:
             _LOGGER.error(f"Get dict Error: {e}")
