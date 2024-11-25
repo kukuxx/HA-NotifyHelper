@@ -1,0 +1,30 @@
+{
+    "config": {
+        "title": "Notify Helper",
+        "step": {
+            "user": {
+                "title": "Configure Your Notify Helper",
+                "data": {
+                    "devices": "Select the devices you want to notify:"
+                }
+            }
+        },
+        "error": {
+            "invalid": "You must select at least one device."
+        }
+    },
+    "options": {
+        "title": "Notify Helper",
+        "step": {
+            "init": {
+                "title": "Update Notify Helper Options",
+                "data": {
+                    "devices": "Select the devices you want to notify:"
+                }
+            }
+        },
+        "error": {
+            "invalid": "You must select at least one device."
+        }
+    }
+}

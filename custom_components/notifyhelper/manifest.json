@@ -3,12 +3,12 @@
         "@kukuxx"
     ],
     "domain": "notifyhelper",
-    "name": "NotifyHelper",
-    "version": "2.0.0",
+    "name": "Notify Helper",
+    "version": "2.1.0",
     "documentation": "https://github.com/kukuxx/HA-NotifyHelper/blob/main/README.md",
     "issue_tracker": "https://github.com/kukuxx/HA-NotifyHelper/issues",
     "requirements": [],
     "dependencies": [],
-    "config_flow": false,
+    "config_flow": true,
     "iot_class": "local_polling"
 }
