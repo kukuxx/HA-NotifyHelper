@@ -78,15 +78,16 @@ class NotificationHelper:
     async def send_notification(self, data):
         """發送通知"""
         try:
+            data_dict = dict(data)
             save_tasks = []
             update_tasks = []
-            if "data" not in data:
-                data["data"] = {}
-            device_id = data.get("target", None)
+            if "data" not in data_dict:
+                data_dict["data"] = {}
+            device_id = data_dict.get("target", None)
 
             if device_id is None:
                 for _device_id in self._notify_device_id:
-                    _data = data
+                    _data = data_dict.copy()
                     badge = self._notifications_dict[_device_id][1] + 1
                     _data["data"]["push"] = {
                         "badge": badge,
@@ -108,17 +109,17 @@ class NotificationHelper:
 
             elif device_id in self._notify_device_id:
                 badge = self._notifications_dict[device_id][1] + 1
-                data["data"]["push"] = {
+                data_dict["data"]["push"] = {
                     "badge": badge,
                 }
                 await self.hass.services.async_call(
                     "notify", device_id, {
-                        "message": data.get("message", "No message"),
-                        "title": data.get("title", "Notification"),
-                        "data": data["data"]
+                        "message": data_dict.get("message", "No message"),
+                        "title": data_dict.get("title", "Notification"),
+                        "data": data_dict["data"]
                     }
                 )
-                await self.save_notification(device_id, data)
+                await self.save_notification(device_id, data_dict)
                 async with self._lock:
                     await self.save_notifications_dict()
                 await self.update_notification_log(device_id)
