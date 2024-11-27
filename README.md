@@ -49,7 +49,7 @@
   <br>they will be <b>deleted</b> starting from the <b>oldest one</b>.
 
 - The method of calling service is the same as using the 
-  <b>built-in notify service.</b><br>
+  <b>built-in notify.mobile_app service.</b><br>
   The following is an automation example:
 ```
     alias: test1
@@ -60,27 +60,25 @@
     conditions: []
     actions:
     - sequence:
-        - action: notifyhelper.send
+        - action: notifyhelper.send_yourname
             data:
             title: Test Notification
             message: This is a test message.
-            target: 
             color:
             data:
                 image: /local/icon.png
     mode: single
 ```
 > [!NOTE]
-> <b>target: <i>The default is to send to all devices,
-  if you want to specify the device, please fill in the ID.</i></b><br>
-  <b>color: <i>To specify the message color please fill in Hex rgb, the default is #c753e8</i></b>
+> <b>color: <i>To specify the message color please fill in Hex rgb,
+  the default is #c753e8</i></b>
    
 - Markdown card configuration:
 ```
     type: markdown
     content: |
         {% set notifications =
-        state_attr('sensor.mobile_app_your_device_log', 'notifications') %}
+        state_attr('sensor.yourname_notification_log', 'notifications') %}
         {% if notifications %}
             
             <div><font size="5">{{ notifications }}</font></div>
@@ -97,10 +95,8 @@
     type: button
     tap_action:
     action: perform-action
-    perform_action: notifyhelper.read
+    perform_action: notifyhelper.read_yourname
     target: {}
-    data:
-        target: mobile_app_your_device
     entity: input_button.read
     show_state: false
     hold_action:

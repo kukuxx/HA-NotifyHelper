@@ -1,6 +1,6 @@
-send:
-  name: Send notification
-  description: Send notification
+send_all:
+  name: Notify all devices
+  description: Notify all devices
   fields:
     message:
       description: Notification content
@@ -11,12 +11,6 @@ send:
     title:
       description: Notification title
       example: "This is a test message"
-      required: false
-      selector:
-        text: {}
-    target:
-      description: Device to receive notifications
-      example: "mobile_app_my_phone"
       required: false
       selector:
         text: {}
@@ -37,11 +31,5 @@ send:
 read:
   name: Read notification
   description: Read notification
-  fields:
-    target:
-      description: The device to read notifications from
-      example: "mobile_app_my_phone"
-      required: true
-      selector:
-        text: {}
+  fields: {}
 

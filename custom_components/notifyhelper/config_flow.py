@@ -1,9 +1,12 @@
+import logging
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN, CONF_DEVICES
+from .const import DOMAIN, CONF_DEVICES, CONF_ENTRY_NAME
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class NotifyHelperConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -16,13 +19,21 @@ class NotifyHelperConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            # 驗證至少選擇一項
-            if not user_input[CONF_DEVICES]:
-                errors["base"] = "invalid"  # 顯示錯誤提示
+            # 驗證輸入內容
+            if any(
+                entry.data.get(CONF_ENTRY_NAME) == user_input[CONF_ENTRY_NAME]
+                for entry in self._async_current_entries()
+            ):
+                errors["base"] = "name_exists"  # 名稱已存在
+            elif not user_input[CONF_ENTRY_NAME]:
+                errors["base"] = "no_name"
+            elif not user_input[CONF_DEVICES]:
+                errors["base"] = "no_device"  # 顯示錯誤提示
+
             else:
                 # 保存配置
                 return self.async_create_entry(
-                    title="NotifyHelper Configuration",
+                    title=user_input[CONF_ENTRY_NAME],
                     data=user_input,
                 )
 
@@ -33,6 +44,8 @@ class NotifyHelperConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         ]
 
         schema = vol.Schema({
+            vol.Required(CONF_ENTRY_NAME):
+            cv.string,
             vol.Required(CONF_DEVICES, default=[]):
             cv.multi_select(mobile_app_devices)
         })
@@ -60,24 +73,36 @@ class NotifyHelperOptionsFlow(config_entries.OptionsFlow):
         """Manage the options for NotifyHelper."""
         errors = {}
 
+        existing_entries = [entry for entry in self.hass.config_entries.async_entries(DOMAIN)]
+
         if user_input is not None:
-            if not user_input[CONF_DEVICES]:
-                errors["base"] = "invalid"  # 顯示錯誤提示
+            if any(
+                entry.data.get(CONF_ENTRY_NAME) == user_input[CONF_ENTRY_NAME]
+                for entry in existing_entries
+            ):
+                errors["base"] = "name_exists"
+            elif not user_input[CONF_ENTRY_NAME]:
+                errors["base"] = "no_name"
+            elif not user_input[CONF_DEVICES]:
+                errors["base"] = "no_device"
             else:
                 # 更新選項
-                return self.async_create_entry(title="", data=user_input)
+                self.hass.config_entries.async_update_entry(self.config_entry, data=user_input)
+                return self.async_create_entry(title=None, data=None)
+
+        old_entry_name = self.config_entry.data.get(CONF_ENTRY_NAME, "")
 
         notify_services = self.hass.services.async_services().get("notify", {})
         mobile_app_devices = [
             devices for devices in notify_services if devices.startswith("mobile_app")
         ]
 
-        old_config = self.config_entry.options.get(
-            CONF_DEVICES, self.config_entry.data.get(CONF_DEVICES, [])
-        )
+        old_config = self.config_entry.data.get(CONF_DEVICES, [])
         _old_config = [device_id for device_id in old_config if device_id in mobile_app_devices]
 
         schema = vol.Schema({
+            vol.Required(CONF_ENTRY_NAME, default=old_entry_name):
+            cv.string,
             vol.Required(
                 CONF_DEVICES,
                 default=_old_config,

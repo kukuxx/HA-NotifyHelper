@@ -44,7 +44,7 @@
 > [!NOTE]
 > 通知只能保存<b>40<b>則超過會從<b>最舊的<b>開始</b>刪除</b>。
 
-- call service的方法和使用內建的<b>notify服務</b>一樣，以下是一個自動化範例:
+- call service的方法和使用內建的<b>notify.mobile_app服務</b>一樣，以下是一個自動化範例:
 ```
     alias: test1
     description: ""
@@ -54,26 +54,24 @@
     conditions: []
     actions:
     - sequence:
-        - action: notifyhelper.send
+        - action: notifyhelper.send_yourname
             data:
             title: Test Notification
             message: This is a test message.
-            target:
             color: 
             data:
                 image: /local/icon.png
     mode: single
 ```
 > [!NOTE]
-> <b>target: <i>預設為群發，如果要指定設備請填上ID</i></b><br>
-  <b>color: <i>要指定訊息顏色請填上 Hex rgb，預設為#c753e8</i></b>
+> <b>color: <i>要指定訊息顏色請填上 Hex rgb，預設為#c753e8</i></b>
    
 - Markdown card 配置:
 ```
     type: markdown
     content: |
         {% set notifications =
-        state_attr('sensor.mobile_app_your_device_log', 'notifications') %}
+        state_attr('sensor.yourname_notification_log', 'notifications') %}
         {% if notifications %}
             
             <div><font size="5">{{ notifications }}</font></div>
@@ -90,10 +88,8 @@
     type: button
     tap_action:
     action: perform-action
-    perform_action: notifyhelper.read
+    perform_action: notifyhelper.read_yourname
     target: {}
-    data:
-        target: mobile_app_your_device
     entity: input_button.read
     show_state: false
     hold_action:
