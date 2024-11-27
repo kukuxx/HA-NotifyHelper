@@ -42,9 +42,9 @@
   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kukuxx&repository=HA-NotifyHelper&category=Integration)
 
 > [!NOTE]
-> 通知只能保存<b>40<b>則超過會從<b>最舊的<b>開始</b>刪除</b>。
+> 通知只能保存<b>100</b>則超過會從<b>最舊的開始刪除</b>。
 
-- call service的方法和使用內建的<b>notify服務</b>一樣，以下是一個自動化範例:
+- call service的方法和內建的notify.mobile_app服務類似，以下是一個自動化範例:
 ```
     alias: test1
     description: ""
@@ -54,26 +54,31 @@
     conditions: []
     actions:
     - sequence:
-        - action: notifyhelper.send
+        - action: notifyhelper.notify
             data:
-            title: Test Notification
-            message: This is a test message.
-            target:
-            color: 
-            data:
-                image: /local/icon.png
+                title: Test Notification
+                message: This is a test message.
+                targets:
+                    - entryname1
+                    - other
+                color: 
+                data:
+                    image: /local/icon.png
     mode: single
 ```
+> [!important]
+> <b>targets<i>必須為列表型式</i></b>
+
 > [!NOTE]
-> <b>target: <i>預設為群發，如果要指定設備請填上ID</i></b><br>
-  <b>color: <i>要指定訊息顏色請填上 Hex rgb，預設為#c753e8</i></b>
+> <b>color: <i>可選，要指定訊息顏色請填上 Hex rgb，預設為None</i></b><br>
+  <b>data: <i>可選， 參考<a href='https://companion.home-assistant.io/docs/notifications/notifications-basic'>HA文檔</a></i></b>
    
 - Markdown card 配置:
 ```
     type: markdown
     content: |
         {% set notifications =
-        state_attr('sensor.mobile_app_your_device_log', 'notifications') %}
+        state_attr('sensor.yourname_notification_log', 'notifications') %}
         {% if notifications %}
             
             <div><font size="5">{{ notifications }}</font></div>
@@ -89,17 +94,17 @@
     show_icon: true
     type: button
     tap_action:
-    action: perform-action
-    perform_action: notifyhelper.read
-    target: {}
-    data:
-        target: mobile_app_your_device
+        action: perform-action
+        perform_action: notifyhelper.read
+        target: {}
+        data:
+            targets:
+                - entryname1
     entity: input_button.read
-    show_state: false
-    hold_action:
-    action: none
-    icon_height: 60px
 ```
+> [!important]
+> <b>targets<i>必須為列表型式</i></b>
+
 > [!NOTE]
 > 不一定要建立button卡片來完成已讀，<br>
   也可以用自動化進行服務呼叫，<br>

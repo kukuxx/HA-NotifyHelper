@@ -1,6 +1,6 @@
-send:
-  name: Send notification
-  description: Send notification
+all:
+  name: Notify all
+  description: Notify all
   fields:
     message:
       description: Notification content
@@ -11,12 +11,6 @@ send:
     title:
       description: Notification title
       example: "This is a test message"
-      required: false
-      selector:
-        text: {}
-    target:
-      description: Device to receive notifications
-      example: "mobile_app_my_phone"
       required: false
       selector:
         text: {}
@@ -34,14 +28,53 @@ send:
       selector:
         object: {}
 
+notify:
+  name: Notify specific
+  description: Notify specific
+  fields:
+    message:
+      description: Notification content
+      example: "Test Notification"
+      required: true
+      selector:
+        text: {}
+    targets:
+      description: specified entry
+      example: 
+        - entryname1
+        - entryname2
+      required: true
+      selector:
+        object: {}
+    title:
+      description: Notification title
+      example: "This is a test message"
+      required: false
+      selector:
+        text: {}
+    color:
+      description: Message color
+      example: "#c753e8"
+      required: false
+      selector:
+        text: {}
+    data:
+      description: Other additional parameters
+      example:
+        image: "/local/image.png"
+      required: false
+      selector:
+        object: {}
 read:
   name: Read notification
   description: Read notification
   fields:
-    target:
-      description: The device to read notifications from
-      example: "mobile_app_my_phone"
+    targets:
+      description: specified entry
+      example: 
+        - entryname1
+        - entryname2
       required: true
       selector:
-        text: {}
-
+        object: {}
+      

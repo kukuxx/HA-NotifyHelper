@@ -9,16 +9,18 @@ _LOGGER = logging.getLogger(__name__)
 
 class NotificationHelper:
 
-    def __init__(self, hass, devices):
+    def __init__(self, hass, devices, entry_id, entry_name):
         self.hass = hass
         self._lock = asyncio.Lock()
         self._notifications_dict: dict[str, list[list, int]] = {}
         self._notify_device_id = devices
+        self.entry_id = entry_id
+        self.entry_name = entry_name
 
     async def save_notifications_dict(self):
-        """保存字典"""
+        """保存字典(save dict)"""
         try:
-            file_path = "/config/custom_components/notifyhelper/notifications.json"
+            file_path = f"/config/custom_components/notifyhelper/notifications/{self.entry_id}.json"
             async with aiofiles.open(file_path, 'w', encoding='utf-8') as f:
                 json_data = json.dumps(self._notifications_dict, ensure_ascii=False, indent=4)
                 await f.write(json_data)
@@ -26,9 +28,9 @@ class NotificationHelper:
             _LOGGER.error(f"Save dict Error: {e}")
 
     async def load_notifications_dict(self):
-        """讀取字典"""
+        """讀取字典(load dict)"""
         try:
-            file_path = "/config/custom_components/notifyhelper/notifications.json"
+            file_path = f"/config/custom_components/notifyhelper/notifications/{self.entry_id}.json"
             async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
                 contents = await f.read()
                 _dict = json.loads(contents)
@@ -36,7 +38,7 @@ class NotificationHelper:
         except FileNotFoundError:
             # json不存在
             _dict = {}
-            _LOGGER.warning(f"Dict Not Found")
+            # _LOGGER.warning(f"Dict Not Found")
             return _dict
         except json.JSONDecodeError:
             # json格式錯誤
@@ -45,164 +47,123 @@ class NotificationHelper:
             return _dict
 
     async def start(self):
-        """初始化,檢查是否有舊資料並建立字典"""
+        """檢查是否有舊資料並建立字典(Check if there are old data and build a dict)"""
         try:
             old_dict = await self.load_notifications_dict()
 
             if old_dict:
                 self._notifications_dict = old_dict
-                # 檢查是否有增加新設備
-                for key in self._notify_device_id:
-                    self._notifications_dict.setdefault(key, [None, 0])
-                # for k in list(self._notifications_dict.keys()):
-                #     if k not in self._notify_device_id:
-                #         self._notifications_dict.pop(k, None)
             else:
-                for key in self._notify_device_id:
-                    self._notifications_dict[key] = [None, 0]
+                self._notifications_dict[self.entry_id] = [None, 0]
 
-            if self._notify_device_id:
-                tasks = [
-                    self.update_notification_log(device_id) for device_id in self._notify_device_id
-                ]
-                await asyncio.gather(*tasks)
+            await self.update_notification_log()
+
         except Exception as e:
             _LOGGER.error(f"Initialization dict Error: {e}")
 
     async def stop(self):
-        """刪除sensor"""
-        for device_id in self._notify_device_id:
-            state_entity_id = f"sensor.{device_id}_log"
-            self.hass.states.async_remove(state_entity_id)
+        """刪除sensor(remove sensor)"""
+        state_entity_id = f"sensor.{self.entry_name}_notification_log"
+        self.hass.states.async_remove(state_entity_id)
 
     async def send_notification(self, data):
-        """發送通知"""
+        """發送通知(send notification)"""
         try:
-            data_dict = dict(data)
-            save_tasks = []
-            update_tasks = []
-            if "data" not in data_dict:
-                data_dict["data"] = {}
-            device_id = data_dict.get("target", None)
-
-            if device_id is None:
-                for _device_id in self._notify_device_id:
-                    _data = data_dict.copy()
-                    badge = self._notifications_dict[_device_id][1] + 1
-                    _data["data"]["push"] = {
-                        "badge": badge,
-                    }
-                    await self.hass.services.async_call(
-                        "notify", _device_id, {
-                            "message": _data.get("message", "No message"),
-                            "title": _data.get("title", "Notification"),
-                            "data": _data["data"]
-                        }
-                    )
-                    save_tasks.append(self.save_notification(_device_id, _data))
-                    update_tasks.append(self.update_notification_log(_device_id))
-
-                await asyncio.gather(*save_tasks)
-                async with self._lock:
-                    await self.save_notifications_dict()
-                await asyncio.gather(*update_tasks)
-
-            elif device_id in self._notify_device_id:
-                badge = self._notifications_dict[device_id][1] + 1
-                data_dict["data"]["push"] = {
-                    "badge": badge,
-                }
+            _data = dict(data)
+            if "data" not in _data:
+                _data["data"] = {}
+            badge = self._notifications_dict[self.entry_id][1] + 1
+            _data["data"]["push"] = {
+                "badge": badge,
+            }
+            for device_id in self._notify_device_id:
                 await self.hass.services.async_call(
                     "notify", device_id, {
-                        "message": data_dict.get("message", "No message"),
-                        "title": data_dict.get("title", "Notification"),
-                        "data": data_dict["data"]
+                        "message": _data.get("message", "No message"),
+                        "title": _data.get("title", "Notification"),
+                        "data": _data["data"]
                     }
                 )
-                await self.save_notification(device_id, data_dict)
-                async with self._lock:
-                    await self.save_notifications_dict()
-                await self.update_notification_log(device_id)
-            else:
-                _LOGGER.error(
-                    f"The device {device_id} does not found. Please check whether the device ID is correct."
-                )
-
+            await self.save_notification(_data)
+            async with self._lock:
+                await self.update_notification_log()
+                await self.save_notifications_dict()
         except KeyError as e:
             _LOGGER.error(f"Get dict Error: {e}")
         except Exception as e:
             _LOGGER.error(f"Send notification Error: {e}")
 
-    async def save_notification(self, device_id, data):
-        """保存通知"""
+    async def save_notification(self, data):
+        """保存通知(save notification)"""
         try:
-            notifications_list = self._notifications_dict[device_id][0] if self._notifications_dict[
-                device_id][0] is not None else []
+            notifications_list = self._notifications_dict[
+                self.entry_id][0] if self._notifications_dict[self.entry_id][0] is not None else []
             time = datetime.now()
             send_time = time.strftime("%Y-%m-%d %H:%M:%S")
             message = data.get("message", "No message")
             title = data.get("title", "Notification")
             image = data.get("data", {}).get("image", None)
+            video = data.get("data", {}).get("video", None)
             badge = data.get("data") and data["data"].get("push", {}).get("badge", 1) or 1
-            color = data.get("color", "#c753e8")
+            color = data.get("color", None)
             # 建立通知
-            if image is None:
-                notification = (
-                    f"<ha-alert alert-type='info'><strong>{title}</strong></ha-alert>"
-                    f"<blockquote><font color='{color}'>{message}</font><br>"  #Text color can be customized
-                    f"<br><b><i>{send_time}</i></b></blockquote>"
-                )
+            notification = (f"<ha-alert alert-type='info'><strong>{title}</strong></ha-alert>")
+
+            if color is None:
+                notification += f"<blockquote>{message}<br>"
             else:
-                notification = (
-                    f"<ha-alert alert-type='info'><strong>{title}</strong></ha-alert>"
-                    f"<blockquote><font color='{color}'>{message}</font><br>"  #Text color can be customized
-                    f"<br><img src='{image}'/><br>"
-                    f"<br><b><i>{send_time}</i></b></blockquote>"
-                )
-            # 將新通知加入列表 # Delete the oldest notification when the number of saved notifications is greater than 30
+                notification += f"<blockquote><font color='{color}'>{message}</font><br>"
+            if image is not None:
+                notification += f"<br><img src='{image}'/><br>"
+            elif video is not None:
+                notification += f"<br><a href='{video}'>Show Video</a><br>"
+
+            notification += f"<br><b><i>{send_time}</i></b></blockquote>"
+
+            # 將新通知加入列表 #
             notifications_list.insert(0, notification)
-            if len(notifications_list) > 40:
+            if len(notifications_list) > 100:
                 notifications_list.pop()
             async with self._lock:
-                self._notifications_dict[device_id] = [notifications_list, badge]
+                self._notifications_dict[self.entry_id] = [notifications_list, badge]
 
         except KeyError as e:
             _LOGGER.error(f"Get dict Error: {e}")
         except Exception as e:
             _LOGGER.error(f"Notification_log Error: {e}")
 
-    async def update_notification_log(self, device_id):
-        """將通知列表更新到 sensor"""
+    async def update_notification_log(self):
+        """將通知列表更新到sensor(update sensor)"""
         try:
-            notification_log = self._notifications_dict[device_id][0]
+            notification_log = self._notifications_dict[self.entry_id][0]
 
             if notification_log is not None:
                 notification_str = '\n'.join(notification_log)
                 # 更新 sensor
                 self.hass.states.async_set(
-                    f"sensor.{device_id}_log",
-                    f"{device_id} notification log",
+                    f"sensor.{self.entry_name}_notification_log",
+                    f"{self.entry_name} notification",
                     attributes={"notifications": notification_str}
                 )
             else:
                 self.hass.states.async_set(
-                    f"sensor.{device_id}_log", f"{device_id} notification log"
+                    f"sensor.{self.entry_name}_notification_log", f"{self.entry_name} notification"
                 )
         except Exception as e:
             _LOGGER.error(f"Update notification_log Error: {e}")
 
     async def read(self, data):
-        """改成已讀狀態"""
-        device_id = data["target"]
-        if device_id in self._notify_device_id:
-            await self.read_notification(device_id)
+        """改成已讀狀態(change to read status)"""
+        async with self._lock:
+            await self.read_notification()
+            await self.update_notification_log()
+        for device_id in self._notify_device_id:
             await self.hass.services.async_call("notify", device_id, {"message": "clear_badge"})
-            await self.update_notification_log(device_id)
 
-    async def read_notification(self, device_id):
-        """將通知中的 info 類型更改為 success 類型"""
+    async def read_notification(self):
+        """將通知中的 info 類型更改為 success 類型(change alert-type info to success)"""
         try:
-            notifications_list = self._notifications_dict.get(device_id, [])[0]
+            notifications_list = self._notifications_dict.get(self.entry_id)[0]
             # 如果該通知列表不為空且為列表型態
             if notifications_list and isinstance(notifications_list, list):
                 for index, notification in enumerate(notifications_list):
@@ -212,11 +173,10 @@ class NotificationHelper:
                             'alert-type=\'info\'', 'alert-type=\'success\''
                         )
                         notifications_list[index] = new_notification
-                async with self._lock:
-                    self._notifications_dict[device_id] = [notifications_list, 0]
-                    await self.save_notifications_dict()
-            else:
-                _LOGGER.warning(f"No valid notifications found for {device_id}")
 
+                self._notifications_dict[self.entry_id] = [notifications_list, 0]
+                await self.save_notifications_dict()
+            else:
+                _LOGGER.warning(f"No valid notifications found for {self.entry_name}")
         except Exception as e:
             _LOGGER.error(f"Error replacing notifications: {e}")

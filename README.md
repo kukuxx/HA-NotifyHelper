@@ -44,13 +44,12 @@
   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kukuxx&repository=HA-NotifyHelper&category=Integration)
 
 > [!NOTE]
-> Only <b>40</b> notifications can be saved.
-  If more than <b>40</b> notifications are stored,
+> Only <b>100</b> notifications can be saved.
+  If more than <b>100</b> notifications are stored,
   <br>they will be <b>deleted</b> starting from the <b>oldest one</b>.
 
-- The method of calling service is the same as using the 
-  <b>built-in notify service.</b><br>
-  The following is an automation example:
+- The method of calling the service is similar to the built-in notify.mobile_app service.
+  <br>The following is an automation example:
 ```
     alias: test1
     description: ""
@@ -60,27 +59,32 @@
     conditions: []
     actions:
     - sequence:
-        - action: notifyhelper.send
+        - action: notifyhelper.notify
             data:
-            title: Test Notification
-            message: This is a test message.
-            target: 
-            color:
-            data:
-                image: /local/icon.png
+                title: Test Notification
+                message: This is a test message.
+                targets:
+                    - entryname1
+                    - other
+                color:
+                data:
+                    image: /local/icon.png
     mode: single
 ```
+> [!important]
+> <b>targets <i>must be a list</i></b>
+
 > [!NOTE]
-> <b>target: <i>The default is to send to all devices,
-  if you want to specify the device, please fill in the ID.</i></b><br>
-  <b>color: <i>To specify the message color please fill in Hex rgb, the default is #c753e8</i></b>
+> <b>color: <i>Optional, specify the message color please fill in Hex rgb,
+  the default is None</i></b><br>
+  <b>data: <i>Optional, Refer to <a href='https://companion.home-assistant.io/docs/notifications/notifications-basic'>HA doc</a></i></b>
    
 - Markdown card configuration:
 ```
     type: markdown
     content: |
         {% set notifications =
-        state_attr('sensor.mobile_app_your_device_log', 'notifications') %}
+        state_attr('sensor.entryname_notification_log', 'notifications') %}
         {% if notifications %}
             
             <div><font size="5">{{ notifications }}</font></div>
@@ -96,17 +100,17 @@
     show_icon: true
     type: button
     tap_action:
-    action: perform-action
-    perform_action: notifyhelper.read
-    target: {}
-    data:
-        target: mobile_app_your_device
+        action: perform-action
+        perform_action: notifyhelper.read
+        target: {}
+        data:
+            targets:
+                - entryname1
     entity: input_button.read
-    show_state: false
-    hold_action:
-    action: none
-    icon_height: 60px
 ```
+> [!important]
+> <b>targets <i>must be a list</i></b>
+
 > [!NOTE]
 > It is not necessary to create a button card to complete the reading，<br>
   service calls can also be made using automation. <br>
