@@ -68,9 +68,11 @@ async def notify(hass, call):
 
     targets = call.data.get("targets", [])
     if not targets:
+        _LOGGER.debug(f"{targets}")
         _LOGGER.error(f"Please specify at least one target")
         return
     elif not isinstance(targets, list):
+        _LOGGER.debug(f"{targets}")
         _LOGGER.error("Targets must be a list in YAML format.")
         return
     else:
@@ -98,9 +100,11 @@ async def notification_read(hass, call):
 
     targets = call.data.get("targets", [])
     if not targets:
+        _LOGGER.debug(f"{targets}")
         _LOGGER.error(f"Please specify at least one target")
         return
     elif not isinstance(targets, list):
+        _LOGGER.debug(f"{targets}")
         _LOGGER.error("Targets must be a list in YAML format.")
         return
     else:

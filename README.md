@@ -64,8 +64,8 @@
                 title: Test Notification
                 message: This is a test message.
                 targets:
-                    - entryname1
-                    - other
+                    - person.you
+                    - person.other
                 color:
                 data:
                     image: /local/icon.png
@@ -84,7 +84,7 @@
     type: markdown
     content: |
         {% set notifications =
-        state_attr('sensor.entryname_notification_log', 'notifications') %}
+        state_attr('sensor.entryname_notifications', 'notifications') %}
         {% if notifications %}
             
             <div><font size="5">{{ notifications }}</font></div>
@@ -105,7 +105,7 @@
         target: {}
         data:
             targets:
-                - entryname1
+                - person.you
     entity: input_button.read
 ```
 > [!important]

@@ -3,6 +3,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN, CONF_DEVICES, CONF_ENTRY_NAME
 
@@ -25,11 +26,8 @@ class NotifyHelperConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 for entry in self._async_current_entries()
             ):
                 errors["base"] = "name_exists"  # 名稱已存在
-            elif not user_input[CONF_ENTRY_NAME]:
-                errors["base"] = "no_name"
             elif not user_input[CONF_DEVICES]:
                 errors["base"] = "no_device"  # 顯示錯誤提示
-
             else:
                 # 保存配置
                 return self.async_create_entry(
@@ -43,9 +41,15 @@ class NotifyHelperConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             devices for devices in notify_services if devices.startswith("mobile_app")
         ]
 
+        entity_registry = er.async_get(self.hass)
+        person_entities = [
+            entity.entity_id for entity in entity_registry.entities.values()
+            if entity.entity_id.startswith("person.")
+        ]
+
         schema = vol.Schema({
             vol.Required(CONF_ENTRY_NAME):
-            cv.string,
+            vol.In(person_entities),
             vol.Required(CONF_DEVICES, default=[]):
             cv.multi_select(mobile_app_devices)
         })
@@ -73,7 +77,10 @@ class NotifyHelperOptionsFlow(config_entries.OptionsFlow):
         """Manage the options for NotifyHelper."""
         errors = {}
 
-        existing_entries = [entry for entry in self.hass.config_entries.async_entries(DOMAIN)]
+        existing_entries = [
+            entry for entry in self.hass.config_entries.async_entries(DOMAIN)
+            if entry.entry_id != self.config_entry.entry_id
+        ]
 
         if user_input is not None:
             if any(
@@ -81,8 +88,6 @@ class NotifyHelperOptionsFlow(config_entries.OptionsFlow):
                 for entry in existing_entries
             ):
                 errors["base"] = "name_exists"
-            elif not user_input[CONF_ENTRY_NAME]:
-                errors["base"] = "no_name"
             elif not user_input[CONF_DEVICES]:
                 errors["base"] = "no_device"
             else:
@@ -100,9 +105,15 @@ class NotifyHelperOptionsFlow(config_entries.OptionsFlow):
         old_config = self.config_entry.data.get(CONF_DEVICES, [])
         _old_config = [device_id for device_id in old_config if device_id in mobile_app_devices]
 
+        entity_registry = er.async_get(self.hass)
+        person_entities = [
+            entity.entity_id for entity in entity_registry.entities.values()
+            if entity.entity_id.startswith("person.")
+        ]
+
         schema = vol.Schema({
             vol.Required(CONF_ENTRY_NAME, default=old_entry_name):
-            cv.string,
+            vol.In(person_entities),
             vol.Required(
                 CONF_DEVICES,
                 default=_old_config,

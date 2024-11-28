@@ -4,16 +4,14 @@
         "step": {
             "user": {
                 "title": "Configure Your Notify Helper",
-                "description": "Select devices and provide a name for this entry.",
                 "data": {
-                    "entry_name": "Enter Name",
+                    "entry_name": "Select Person",
                     "devices": "Select the devices you want to notify:"
                 }
             }
         },
         "error": {
             "name_exists": "An entry with this name already exists.",
-            "no_name": "You must provide a name for this entry.",
             "no_device": "You must select at least one device."
         }
     },
@@ -22,16 +20,14 @@
         "step": {
             "init": {
                 "title": "Update Notify Helper Options",
-                "description": "Select devices and provide a name for this entry.",
                 "data": {
-                    "entry_name": "Enter Name",
+                    "entry_name": "Select Person",
                     "devices": "Select the devices you want to notify:"
                 }
             }
         },
         "error": {
             "name_exists": "An entry with this name already exists.",
-            "no_name": "You must provide a name for this entry.",
             "no_device": "You must select at least one device."
         }
     }

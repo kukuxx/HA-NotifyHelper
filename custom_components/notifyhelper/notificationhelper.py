@@ -2,7 +2,8 @@ import asyncio
 import aiofiles
 import json
 import logging
-from datetime import datetime
+
+from homeassistant.util.dt import now
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class NotificationHelper:
         self._notifications_dict: dict[str, list[list, int]] = {}
         self._notify_device_id = devices
         self.entry_id = entry_id
-        self.entry_name = entry_name
+        self.entry_name = entry_name.split(".")[1]
 
     async def save_notifications_dict(self):
         """保存字典(save dict)"""
@@ -63,8 +64,11 @@ class NotificationHelper:
 
     async def stop(self):
         """刪除sensor(remove sensor)"""
-        state_entity_id = f"sensor.{self.entry_name}_notification_log"
-        self.hass.states.async_remove(state_entity_id)
+        try:
+            state_entity_id = f"sensor.{self.entry_name}_notifications"
+            self.hass.states.async_remove(state_entity_id)
+        except Exception as e:
+            _LOGGER.error(f"Remove sensor Error: {e}")
 
     async def send_notification(self, data):
         """發送通知(send notification)"""
@@ -98,8 +102,8 @@ class NotificationHelper:
         try:
             notifications_list = self._notifications_dict[
                 self.entry_id][0] if self._notifications_dict[self.entry_id][0] is not None else []
-            time = datetime.now()
-            send_time = time.strftime("%Y-%m-%d %H:%M:%S")
+
+            send_time = now().strftime("%Y-%m-%d %H:%M:%S")
             message = data.get("message", "No message")
             title = data.get("title", "Notification")
             image = data.get("data", {}).get("image", None)
@@ -141,16 +145,16 @@ class NotificationHelper:
                 notification_str = '\n'.join(notification_log)
                 # 更新 sensor
                 self.hass.states.async_set(
-                    f"sensor.{self.entry_name}_notification_log",
-                    f"{self.entry_name} notification",
+                    f"sensor.{self.entry_name}_notifications",
+                    f"{self.entry_name} notifications",
                     attributes={"notifications": notification_str}
                 )
             else:
                 self.hass.states.async_set(
-                    f"sensor.{self.entry_name}_notification_log", f"{self.entry_name} notification"
+                    f"sensor.{self.entry_name}_notifications", f"{self.entry_name} notifications"
                 )
         except Exception as e:
-            _LOGGER.error(f"Update notification_log Error: {e}")
+            _LOGGER.error(f"Update notifications_log Error: {e}")
 
     async def read(self, data):
         """改成已讀狀態(change to read status)"""
