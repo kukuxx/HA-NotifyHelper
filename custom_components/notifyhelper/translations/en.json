@@ -12,7 +12,8 @@
         },
         "error": {
             "name_exists": "An entry with this name already exists.",
-            "no_device": "You must select at least one device."
+            "no_device": "You must select at least one device.",
+            "devices_conflict": "Other entries already exist for the device"
         }
     },
     "options": {
@@ -28,7 +29,8 @@
         },
         "error": {
             "name_exists": "An entry with this name already exists.",
-            "no_device": "You must select at least one device."
+            "no_device": "You must select at least one device.",
+            "devices_conflict": "Other entries already exist for the device"
         }
     }
 }

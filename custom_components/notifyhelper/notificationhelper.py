@@ -2,8 +2,9 @@ import asyncio
 import aiofiles
 import json
 import logging
+from urllib.parse import urlparse
 
-from homeassistant.util.dt import now
+from homeassistant.util.dt import now, as_timestamp
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -111,6 +112,7 @@ class NotificationHelper:
             notifications_list = self._notifications_dict[
                 self.entry_id][0] if self._notifications_dict[self.entry_id][0] is not None else []
 
+            timestamp = as_timestamp(now())
             send_time = now().strftime("%Y-%m-%d %H:%M:%S")
             message = data.get("message", "No message")
             title = data.get("title", "Notification")
@@ -125,10 +127,17 @@ class NotificationHelper:
                 notification += f"<blockquote>{message}<br>"
             else:
                 notification += f"<blockquote><font color='{color}'>{message}</font><br>"
+
             if image is not None:
-                notification += f"<br><img src='{image}'/><br>"
+                if self.check_url(image):
+                    notification += f"<br><img src='{image}'/><br>"
+                else:
+                    notification += f"<br><img src='{image}?timestamp={timestamp}'/><br>"
             elif video is not None:
-                notification += f"<br><a href='{video}'>Show Video</a><br>"
+                if self.check_url(video):
+                    notification += f"<br><a href='{video}'>Show Video</a><br>"
+                else:
+                    notification += f"<br><a href='{video}?timestamp={timestamp}'>Show Video</a><br>"
 
             notification += f"<br><b><i>{send_time}</i></b></blockquote>"
 
@@ -143,6 +152,10 @@ class NotificationHelper:
             _LOGGER.error(f"Get dict Error: {e}")
         except Exception as e:
             _LOGGER.error(f"Notification_log Error: {e}")
+
+    def check_url(self, url):
+        result = urlparse(url)
+        return result.scheme in ['http', 'https']
 
     async def update_notification_log(self):
         """將通知列表更新到sensor(update sensor)"""

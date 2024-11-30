@@ -28,6 +28,11 @@ class NotifyHelperConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "name_exists"  # 名稱已存在
             elif not user_input[CONF_DEVICES]:
                 errors["base"] = "no_device"  # 顯示錯誤提示
+            elif any(
+                set(user_input[CONF_DEVICES]) & set(entry.data.get(CONF_DEVICES, []))
+                for entry in self._async_current_entries()
+            ):
+                errors["base"] = "devices_conflict"
             else:
                 # 保存配置
                 return self.async_create_entry(
@@ -90,6 +95,11 @@ class NotifyHelperOptionsFlow(config_entries.OptionsFlow):
                 errors["base"] = "name_exists"
             elif not user_input[CONF_DEVICES]:
                 errors["base"] = "no_device"
+            elif any(
+                set(user_input[CONF_DEVICES]) & set(entry.data.get(CONF_DEVICES))
+                for entry in existing_entries
+            ):
+                errors["base"] = "devices_conflict"
             else:
                 # 更新選項
                 self.hass.config_entries.async_update_entry(self.config_entry, data=user_input)
