@@ -33,9 +33,13 @@
 > Thanks to <b>Mark Wu</b> for some ideas and tests
 
 > [!NOTE]
-> If you encounter bugs during use, please open an issues
+> If you encounter a bug during use, please enable debug mode in the integration and try the original operation, then open issues and post the log.
 
-# Instructions for use  
+> [!important]
+> If you keep getting notifications for old pictures or videos, please see 
+<a href='https://community.home-assistant.io/t/home-assistant-sends-cached-images-in-ios-notification/520766'>here.</a>
+
+## Instructions for use  
 
 - It is recommended to use <b>HACS</b> to install. If you want to install manually,
   <br>please put the <b>notifyhelper</b> folder in <b>custom_components</b> folder, 
@@ -116,7 +120,7 @@
   service calls can also be made using automation. <br>
   Please configure according to personal needs.
 
-# Achievements Display   
+## Achievements Display   
 
 ![gif](/doc/display.gif)
 

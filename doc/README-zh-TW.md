@@ -32,9 +32,12 @@
 > 感謝 <b>Mark Wu</b> 提供的一些想法與測試
 
 > [!NOTE]
-> 如果在使用過程中遇到bug，請開啟issues
+> 如果在使用過程中遇到bug，請先在整合裡啟用偵錯嘗試原本的操作之後，開啟issues把log貼上來。
 
-# 使用教學
+> [!important]
+> 如果遇到通知一直收到舊圖片或影片請看 <a href='https://community.home-assistant.io/t/home-assistant-sends-cached-images-in-ios-notification/520766'>這裡</a>
+
+## 使用教學
 
 - 建議使用 <b>HACS</b> 安裝如果想手動安裝請將 <b>notifyhelper</b> 資料夾放在 <br>
   <b>custom_components</b> 資料夾中， 並重啟 <b>Home assistant</b>。
@@ -110,7 +113,7 @@
   也可以用自動化進行服務呼叫，<br>
   請按個人需求來配置。    
 
-# 成果展示
+## 成果展示
 
 ![gif](/doc/display.gif)
 
