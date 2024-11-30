@@ -74,12 +74,20 @@ class NotificationHelper:
         """發送通知(send notification)"""
         try:
             _data = dict(data)
+            _LOGGER.debug(f"{_data}")
             if "data" not in _data:
                 _data["data"] = {}
+                _LOGGER.debug(f"{_data}")
+            if "push" not in _data["data"]:
+                _data["data"]["push"] = {}
+                _LOGGER.debug(f"{_data}")
+
             badge = self._notifications_dict[self.entry_id][1] + 1
-            _data["data"]["push"] = {
+            _data["data"]["push"].update({
                 "badge": badge,
-            }
+            })
+            _LOGGER.debug(f"{_data}")
+
             for device_id in self._notify_device_id:
                 await self.hass.services.async_call(
                     "notify", device_id, {
