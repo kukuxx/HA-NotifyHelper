@@ -14,6 +14,7 @@ from .const import DOMAIN, CONF_DEVICES, CONF_ENTRY_NAME
 CONFIG_SCHEMA = cv.removed(DOMAIN, raise_if_present=False)  # YAML 配置已棄用
 
 _LOGGER = logging.getLogger(__name__)
+SERVICE_DOMAIN = "notify"
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -35,9 +36,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             """Service that reads notifications to specific entries."""
             await notification_read(hass, call)
 
-        hass.services.async_register(DOMAIN, "all", service_notify_all)
-        hass.services.async_register(DOMAIN, "notify", service_notify)
-        hass.services.async_register(DOMAIN, "read", service_read)
+        hass.services.async_register(SERVICE_DOMAIN, "all_person", service_notify_all)
+        hass.services.async_register(SERVICE_DOMAIN, "notify_person", service_notify)
+        hass.services.async_register(SERVICE_DOMAIN, "read", service_read)
 
         return True
     except Exception as e:
@@ -179,7 +180,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.info(f"Removed file: {entry.entry_id}.json")
 
     if not hass.data[DOMAIN]:
-        hass.services.async_remove(DOMAIN, "all")
-        hass.services.async_remove(DOMAIN, "notify")
-        hass.services.async_remove(DOMAIN, "read")
+        hass.services.async_remove(SERVICE_DOMAIN, "all_person")
+        hass.services.async_remove(SERVICE_DOMAIN, "notify_person")
+        hass.services.async_remove(SERVICE_DOMAIN, "read")
         hass.data.pop(DOMAIN)

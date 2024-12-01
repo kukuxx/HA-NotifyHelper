@@ -63,7 +63,7 @@
     conditions: []
     actions:
     - sequence:
-        - action: notifyhelper.notify
+        - action: notify.notify_person
             data:
                 title: Test Notification
                 message: This is a test message.
@@ -88,7 +88,7 @@
     type: markdown
     content: |
         {% set notifications =
-        state_attr('sensor.entryname_notifications', 'notifications') %}
+        state_attr('sensor.personname_notifications', 'notifications') %}
         {% if notifications %}
             
             <div><font size="5">{{ notifications }}</font></div>
@@ -105,7 +105,7 @@
     type: button
     tap_action:
         action: perform-action
-        perform_action: notifyhelper.read
+        perform_action: notify.read
         target: {}
         data:
             targets:

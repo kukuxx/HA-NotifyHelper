@@ -1,6 +1,6 @@
-all:
-  name: Notify all
-  description: Notify all
+all_person:
+  name: Notify all person
+  description: Notify all person
   fields:
     message:
       description: Notification content
@@ -28,9 +28,9 @@ all:
       selector:
         object: {}
 
-notify:
-  name: Notify specific
-  description: Notify specific
+notify_person:
+  name: Notify designated person
+  description: Notify designated person
   fields:
     message:
       description: Notification content
@@ -39,10 +39,10 @@ notify:
       selector:
         text: {}
     targets:
-      description: specified entry
+      description: Designated person
       example: 
-        - entryname1
-        - entryname2
+        - person.1
+        - person.2
       required: true
       selector:
         object: {}
@@ -70,10 +70,10 @@ read:
   description: Read notification
   fields:
     targets:
-      description: specified entry
+      description: Designated person
       example: 
-        - entryname1
-        - entryname2
+        - person.1
+        - person.2
       required: true
       selector:
         object: {}
