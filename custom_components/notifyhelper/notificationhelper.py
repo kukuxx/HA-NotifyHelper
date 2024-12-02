@@ -82,6 +82,8 @@ class NotificationHelper:
             if "push" not in _data["data"]:
                 _data["data"]["push"] = {}
                 _LOGGER.debug(f"{_data}")
+            if not _data.get("title", None):
+                _data["title"] = "Notification"
 
             badge = self._notifications_dict[self.entry_id][1] + 1
             _data["data"]["push"].update({
@@ -123,17 +125,17 @@ class NotificationHelper:
             # 建立通知
             notification = (f"<ha-alert alert-type='info'><strong>{title}</strong></ha-alert>")
 
-            if color is None:
+            if not color:
                 notification += f"<blockquote>{message}<br>"
             else:
                 notification += f"<blockquote><font color='{color}'>{message}</font><br>"
 
-            if image is not None:
+            if image:
                 if self.check_url(image):
                     notification += f"<br><img src='{image}'/><br>"
                 else:
                     notification += f"<br><img src='{image}?timestamp={timestamp}'/><br>"
-            elif video is not None:
+            if video:
                 if self.check_url(video):
                     notification += f"<br><a href='{video}'>Show Video</a><br>"
                 else:

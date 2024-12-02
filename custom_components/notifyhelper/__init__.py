@@ -7,14 +7,24 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.service import async_set_service_schema
 
 from .notificationhelper import NotificationHelper
-from .const import DOMAIN, CONF_DEVICES, CONF_ENTRY_NAME
+from .const import (
+    DOMAIN,
+    CONF_DEVICES,
+    CONF_ENTRY_NAME,
+    SERVICE_DOMAIN,
+    ALL_PERSON_SCHEMA,
+    NOTIFY_PERSON_SCHEMA,
+    READ_SCHEMA,
+    SERVICE_DESCRIBE_SCHEMA,
+    SERVICES,
+)
 
-CONFIG_SCHEMA = cv.removed(DOMAIN, raise_if_present=False)  # YAML 配置已棄用
+CONFIG_SCHEMA = cv.removed(DOMAIN, raise_if_present=True)  # YAML 配置已棄用
 
 _LOGGER = logging.getLogger(__name__)
-SERVICE_DOMAIN = "notify"
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -36,9 +46,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             """Service that reads notifications to specific entries."""
             await notification_read(hass, call)
 
-        hass.services.async_register(SERVICE_DOMAIN, "all_person", service_notify_all)
-        hass.services.async_register(SERVICE_DOMAIN, "notify_person", service_notify)
-        hass.services.async_register(SERVICE_DOMAIN, "read", service_read)
+        hass.services.async_register(
+            SERVICE_DOMAIN, "all_person", service_notify_all, schema=ALL_PERSON_SCHEMA
+        )
+        hass.services.async_register(
+            SERVICE_DOMAIN, "notify_person", service_notify, schema=NOTIFY_PERSON_SCHEMA
+        )
+        hass.services.async_register(SERVICE_DOMAIN, "read", service_read, schema=READ_SCHEMA)
+
+        for service_name in SERVICES:
+            async_set_service_schema(
+                hass, SERVICE_DOMAIN, service_name, SERVICE_DESCRIBE_SCHEMA[service_name]
+            )
 
         return True
     except Exception as e:

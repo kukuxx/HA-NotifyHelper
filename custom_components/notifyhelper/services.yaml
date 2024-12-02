@@ -1,80 +1,80 @@
-all_person:
-  name: Notify all person
-  description: Notify all person
-  fields:
-    message:
-      description: Notification content
-      example: "Test Notification"
-      required: true
-      selector:
-        text: {}
-    title:
-      description: Notification title
-      example: "This is a test message"
-      required: false
-      selector:
-        text: {}
-    color:
-      description: Message color
-      example: "#c753e8"
-      required: false
-      selector:
-        text: {}
-    data:
-      description: Other additional parameters
-      example:
-        image: "/local/image.png"
-      required: false
-      selector:
-        object: {}
+# all_person:
+#   name: Notify all person
+#   description: Notify all person
+#   fields:
+#     message:
+#       description: Notification content
+#       example: "Test Notification"
+#       required: true
+#       selector:
+#         text: {}
+#     title:
+#       description: Notification title
+#       example: "This is a test message"
+#       required: false
+#       selector:
+#         text: {}
+#     color:
+#       description: Message color
+#       example: "#c753e8"
+#       required: false
+#       selector:
+#         text: {}
+#     data:
+#       description: Other additional parameters
+#       example:
+#         image: "/local/image.png"
+#       required: false
+#       selector:
+#         object: {}
 
-notify_person:
-  name: Notify designated person
-  description: Notify designated person
-  fields:
-    message:
-      description: Notification content
-      example: "Test Notification"
-      required: true
-      selector:
-        text: {}
-    targets:
-      description: Designated person
-      example: 
-        - person.1
-        - person.2
-      required: true
-      selector:
-        object: {}
-    title:
-      description: Notification title
-      example: "This is a test message"
-      required: false
-      selector:
-        text: {}
-    color:
-      description: Message color
-      example: "#c753e8"
-      required: false
-      selector:
-        text: {}
-    data:
-      description: Other additional parameters
-      example:
-        image: "/local/image.png"
-      required: false
-      selector:
-        object: {}
-read:
-  name: Read notification
-  description: Read notification
-  fields:
-    targets:
-      description: Designated person
-      example: 
-        - person.1
-        - person.2
-      required: true
-      selector:
-        object: {}
+# notify_person:
+#   name: Notify designated person
+#   description: Notify designated person
+#   fields:
+#     message:
+#       description: Notification content
+#       example: "Test Notification"
+#       required: true
+#       selector:
+#         text: {}
+#     targets:
+#       description: Designated person
+#       example: 
+#         - person.1
+#         - person.2
+#       required: true
+#       selector:
+#         object: {}
+#     title:
+#       description: Notification title
+#       example: "This is a test message"
+#       required: false
+#       selector:
+#         text: {}
+#     color:
+#       description: Message color
+#       example: "#c753e8"
+#       required: false
+#       selector:
+#         text: {}
+#     data:
+#       description: Other additional parameters
+#       example:
+#         image: "/local/image.png"
+#       required: false
+#       selector:
+#         object: {}
+# read:
+#   name: Read notification
+#   description: Read notification
+#   fields:
+#     targets:
+#       description: Designated person
+#       example: 
+#         - person.1
+#         - person.2
+#       required: true
+#       selector:
+#         object: {}
       

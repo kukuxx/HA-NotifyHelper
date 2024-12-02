@@ -4,7 +4,7 @@
     ],
     "domain": "notifyhelper",
     "name": "Notify Helper",
-    "version": "2.2.4",
+    "version": "2.2.5",
     "documentation": "https://github.com/kukuxx/HA-NotifyHelper/blob/main/README.md",
     "issue_tracker": "https://github.com/kukuxx/HA-NotifyHelper/issues",
     "requirements": [],
