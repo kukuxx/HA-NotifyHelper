@@ -29,13 +29,18 @@
 > 這是一個<b>Home assistan自訂整合</b>，可以保存和格式化已發送到行動應用程式的通知以便查看，
   支持配置多人專屬通知面板。
 
-> 感謝 <b>Mark Wu</b> 提供的一些想法與測試
+> 感謝 <b>Mark Wu</b> 提供的一些想法與測試。
 
-> [!NOTE]
-> 如果在使用過程中遇到bug，請先在整合裡啟用偵錯嘗試原本的操作之後，開啟issues把log貼上來。
+> [!Important]
+> <b>因為2.3.0版本修改較多東西更新後請記得到整合--整合實體--點擊設定，進行重新配置:</b>
+![image](/doc/update_settings1.png) <br>
+![image](/doc/update_settings2.png)
 
-> [!important]
-> 如果遇到通知一直收到舊圖片或影片請看 <a href='https://community.home-assistant.io/t/home-assistant-sends-cached-images-in-ios-notification/520766'>這裡</a>
+> [!Important]
+> 如果遇到通知一直收到舊圖片或影片請看 <a href='https://community.home-assistant.io/t/home-assistant-sends-cached-images-in-ios-notification/520766'>這裡。</a>
+
+> [!Tip]
+> 如果在使用過程中遇到bug，請先在整合裡<b>啟用偵錯</b>嘗試原本的操作之後，開啟issues把log貼上來。
 
 ## 使用教學
 
@@ -44,7 +49,10 @@
 
   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kukuxx&repository=HA-NotifyHelper&category=Integration)
 
-> [!NOTE]
+- 重啟完成到整合裡搜尋notifyhelper進行設定:<br>
+![image](/doc/settings.png)
+
+> [!Tip]
 > 通知只能保存<b>100</b>則超過會從<b>最舊的開始刪除</b>。
 
 - call service的方法和內建的notify.mobile_app服務類似，以下是一個自動化範例:
@@ -69,13 +77,45 @@
                     image: /local/icon.png
     mode: single
 ```
-> [!important]
-> <b>targets<i>必須為列表型式</i></b>
+> [!Tip]
+> <b>targets: <i>必須為列表型式。</i></b><br>
+> <b>color: <i>可選，要指定訊息顏色請填上 Hex rgb，預設為None。</i></b><br>
+> <b>data: <i>可選， 參考<a href='https://companion.home-assistant.io/docs/notifications/notifications-basic'>HA文檔。</a></i></b>
 
-> [!NOTE]
-> <b>color: <i>可選，要指定訊息顏色請填上 Hex rgb，預設為None</i></b><br>
-  <b>data: <i>可選， 參考<a href='https://companion.home-assistant.io/docs/notifications/notifications-basic'>HA文檔</a></i></b>
-   
+- Android和ios可以接受的data參數都不一樣，如果想分別設置可以在data裡加上<b>ios</b>和<b>android</b>，以下是一個自動化範例:
+```
+    alias: test1
+    description: ""
+    triggers:
+    - trigger: event
+        event_type: ""
+    conditions: []
+    actions:
+    - sequence:
+        - action: notify.notify_person
+            data:
+                title: Test Notification
+                message: This is a test message.
+                targets:
+                    - person.you
+                    - person.other
+                color: 
+                data:
+                  ios:
+                    image: /local/icon.png
+                    push:
+                        sound:
+                        name: US-EN-Morgan-Freeman-Roommate-Is-Arriving.wav
+                        volume: 0.3
+                        critical: 1
+                  android:
+                    image: /local/icon.png
+    mode: single
+```
+> [!Tip]
+> <b>如果設置的參數都是通用的可以使用第一個範例不需要加上ios和android。<br>
+> 你可以針對ios和android傳送不同照片或影片但是通知只會保存其中一個，這點請注意。</b>
+
 - Markdown card 配置:
 ```
     type: markdown
@@ -105,8 +145,8 @@
                 - person.you
     entity: input_button.read
 ```
-> [!important]
-> <b>targets<i>必須為列表型式</i></b>
+> [!Tip]
+> <b>targets: <i>必須為列表型式。</i></b>
 
 > [!NOTE]
 > 不一定要建立button卡片來完成已讀，<br>

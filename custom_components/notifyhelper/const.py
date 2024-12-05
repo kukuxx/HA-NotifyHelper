@@ -1,10 +1,11 @@
 import voluptuous as vol
 
-CONF_DEVICES = "devices"
-CONF_ENTRY_NAME = "entry_name"
 DOMAIN = "notifyhelper"
 SERVICE_DOMAIN = "notify"
 SERVICES = ["all_person", "notify_person", "read"]
+CONF_ENTRY_NAME = "entry_name"
+CONF_IOS_DEVICES = "ios_devices"
+CONF_ANDROID_DEVICES = "android_devices"
 
 ALL_PERSON_SCHEMA = vol.Schema({
     vol.Required("message"): str,
