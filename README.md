@@ -30,14 +30,21 @@
   notifications sent to mobile applications for viewing, and supports the configuration
   of multi-person exclusive notification panels.
 
-> Thanks to <b>Mark Wu</b> for some ideas and tests
+> Thanks to <b>Mark Wu</b> for some ideas and tests.
 
-> [!NOTE]
-> If you encounter a bug during use, please enable debug mode in the integration and try the original operation, then open issues and post the log.
+> [!Important]
+> <b>Since version 2.3.0 has changed a lot, please remember to go to Integration -- Integrated Entries -- Click Settings to reconfigure after the update:</b>
+![image](/doc/update_settings1.png) <br>
+![image](/doc/update_settings2.png)
 
-> [!important]
+> [!Important]
 > If you keep getting notifications for old pictures or videos, please see 
 <a href='https://community.home-assistant.io/t/home-assistant-sends-cached-images-in-ios-notification/520766'>here.</a>
+
+> [!Tip]
+> If you encounter a bug during use, <br>
+> please enable <b>debug mode</b> in the integration and try the original operation, <br>
+> then open issues and post the log.
 
 ## Instructions for use  
 
@@ -47,10 +54,13 @@
 
   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kukuxx&repository=HA-NotifyHelper&category=Integration)
 
-> [!NOTE]
-> Only <b>100</b> notifications can be saved.
-  If more than <b>100</b> notifications are stored,
-  <br>they will be <b>deleted</b> starting from the <b>oldest one</b>.
+- After the restart is completed, search for notifyhelper in the integration and set it up:<br>
+![image](/doc/settings.png)
+
+> [!Tip]
+> Only <b>100</b> notifications can be saved.<br>
+> If more than <b>100</b> notifications are stored,
+> <br>they will be <b>deleted</b> starting from the <b>oldest one</b>.
 
 - The method of calling the service is similar to the built-in notify.mobile_app service.
   <br>The following is an automation example:
@@ -75,14 +85,49 @@
                     image: /local/icon.png
     mode: single
 ```
-> [!important]
-> <b>targets <i>must be a list</i></b>
-
-> [!NOTE]
+> [!Tip]
+> <b>targets: <i>must be a list.</i></b><br>
 > <b>color: <i>Optional, specify the message color please fill in Hex rgb,
-  the default is None</i></b><br>
-  <b>data: <i>Optional, Refer to <a href='https://companion.home-assistant.io/docs/notifications/notifications-basic'>HA doc</a></i></b>
-   
+> the default is None.</i></b><br>
+> <b>data: <i>Optional, Refer to <a href='https://companion.home-assistant.io/docs/notifications/notifications-basic'>HA doc.</a></i></b>
+
+- The data parameters accepted by Android and ios are different, if you want to set them separately, you can add <b>ios</b> and <b>android</b> to the data.
+<br>The following is an automation example:
+```
+    alias: test1
+    description: ""
+    triggers:
+    - trigger: event
+        event_type: ""
+    conditions: []
+    actions:
+    - sequence:
+        - action: notify.notify_person
+            data:
+                title: Test Notification
+                message: This is a test message.
+                targets:
+                    - person.you
+                    - person.other
+                color: 
+                data:
+                  ios:
+                    image: /local/icon.png
+                    push:
+                        sound:
+                        name: US-EN-Morgan-Freeman-Roommate-Is-Arriving.wav
+                        volume: 0.3
+                        critical: 1
+                  android:
+                    image: /local/icon.png
+    mode: single
+```
+
+> [!Tip]
+> <b>If the set parameters are all universal,
+you can use the first example without adding ios and android.<br>
+> You can send different photos or videos for ios and android but the notification will only save one of them, please be aware of this. </b>
+
 - Markdown card configuration:
 ```
     type: markdown
@@ -112,11 +157,11 @@
                 - person.you
     entity: input_button.read
 ```
-> [!important]
-> <b>targets <i>must be a list</i></b>
+> [!Tip]
+> <b>targets: <i>must be a list.</i></b>
 
 > [!NOTE]
-> It is not necessary to create a button card to complete the reading，<br>
+> It is not necessary to create a button card to complete the reading,<br>
   service calls can also be made using automation. <br>
   Please configure according to personal needs.
 

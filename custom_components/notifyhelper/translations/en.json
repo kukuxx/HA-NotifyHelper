@@ -6,14 +6,15 @@
                 "title": "Configure Your Notify Helper",
                 "data": {
                     "entry_name": "Select Person",
-                    "devices": "Select the devices you want to notify:"
+                    "ios_devices": "Select the ios devices you want to notify:",
+                    "android_devices": "Select the android devices you want to notify:"
                 }
             }
         },
         "error": {
             "name_exists": "An entry with this name already exists.",
             "no_device": "You must select at least one device.",
-            "devices_conflict": "Other entries already exist for the device"
+            "devices_conflict": "The device already exists"
         }
     },
     "options": {
@@ -23,14 +24,15 @@
                 "title": "Update Notify Helper Options",
                 "data": {
                     "entry_name": "Select Person",
-                    "devices": "Select the devices you want to notify:"
+                    "ios_devices": "Select the ios devices you want to notify:",
+                    "android_devices": "Select the android devices you want to notify:"
                 }
             }
         },
         "error": {
             "name_exists": "An entry with this name already exists.",
             "no_device": "You must select at least one device.",
-            "devices_conflict": "Other entries already exist for the device"
+            "devices_conflict": "The device already exists"
         }
     }
 }
