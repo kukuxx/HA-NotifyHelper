@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 import logging
 
+from copy import deepcopy
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
@@ -12,7 +14,8 @@ from homeassistant.helpers.service import async_set_service_schema
 from .notificationhelper import NotificationHelper
 from .const import (
     DOMAIN,
-    CONF_DEVICES,
+    CONF_IOS_DEVICES,
+    CONF_ANDROID_DEVICES,
     CONF_ENTRY_NAME,
     SERVICE_DOMAIN,
     ALL_PERSON_SCHEMA,
@@ -65,93 +68,16 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         return False
 
 
-async def notify_all(hass, call):
-    """Send notification to all"""
-    if not hass.data.get(DOMAIN):
-        _LOGGER.warning("No entries available for NotifyHelper to send notifications.")
-        return
-
-    for entry_id, entry in hass.data[DOMAIN].items():
-        try:
-            _LOGGER.debug(f"Sending notification to entry {entry_id} with data: {call.data}")
-            helper = entry[0]
-            await helper.send_notification(call.data)
-        except Exception as e:
-            _LOGGER.error(f"Failed to send notification for entry {entry_id}: {e}")
-
-
-async def notify(hass, call):
-    """Send notification to entry"""
-    if not hass.data.get(DOMAIN):
-        _LOGGER.warning("No entries available for NotifyHelper to send notifications.")
-        return
-
-    targets = call.data.get("targets", [])
-    if not targets:
-        _LOGGER.debug(f"{targets}")
-        _LOGGER.error(f"Please specify at least one target")
-        return
-    elif not isinstance(targets, list):
-        _LOGGER.debug(f"{targets}")
-        _LOGGER.error("Targets must be a list in YAML format.")
-        return
-    else:
-        for entry_id, entry in hass.data[DOMAIN].items():
-            entry_name = entry[1]
-            helper = entry[0]
-            try:
-                if entry_name in targets:
-                    _LOGGER.debug(
-                        f"Sending notification to entry {entry_id} with data: {call.data}"
-                    )
-                    helper = entry[0]
-                    await helper.send_notification(call.data)
-                else:
-                    _LOGGER.debug(f"{targets}:{entry_name} not in targets")
-            except Exception as e:
-                _LOGGER.error(f"Failed to send notification for entry {entry_id}: {e}")
-
-
-async def notification_read(hass, call):
-    """Read notification to entry"""
-    if not hass.data.get(DOMAIN):
-        _LOGGER.warning("No entries available for NotifyHelper to send notifications.")
-        return
-
-    targets = call.data.get("targets", [])
-    if not targets:
-        _LOGGER.debug(f"{targets}")
-        _LOGGER.error(f"Please specify at least one target")
-        return
-    elif not isinstance(targets, list):
-        _LOGGER.debug(f"{targets}")
-        _LOGGER.error("Targets must be a list in YAML format.")
-        return
-    else:
-        for entry_id, entry in hass.data[DOMAIN].items():
-            entry_name = entry[1]
-            helper = entry[0]
-            try:
-                if entry_name in targets:
-                    _LOGGER.debug(
-                        f"Reading notification to entry {entry_id} with data: {call.data}"
-                    )
-                    await helper.read(call.data)
-                else:
-                    _LOGGER.debug(f"{targets}:{entry_name} not in targets")
-            except Exception as e:
-                _LOGGER.error(f"Failed to send notification for entry {entry_id}: {e}")
-
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up NotifyHelper from a config entry."""
     try:
         # 取得裝置配置
-        devices = entry.data.get(CONF_DEVICES, [])
+        ios_devices = entry.data.get(CONF_IOS_DEVICES, [])
+        android_devices = entry.data.get(CONF_ANDROID_DEVICES, [])
         entry_name = entry.data.get(CONF_ENTRY_NAME, "")
         entry_id = entry.entry_id
 
-        helper = NotificationHelper(hass, devices, entry_id, entry_name)
+        helper = NotificationHelper(hass, ios_devices, android_devices, entry_id, entry_name)
         hass.data.setdefault(DOMAIN, {})[entry_id] = [helper, entry_name]
         await helper.start()
 
@@ -193,13 +119,83 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle removal of an entry."""
-    file_path = f"/config/custom_components/notifyhelper/notifications/{entry.entry_id}.json"
-    if os.path.exists(file_path):
-        os.remove(file_path)
-        _LOGGER.info(f"Removed file: {entry.entry_id}.json")
+    json_path = f"/config/custom_components/notifyhelper/notifications/{entry.entry_id}.json"
+    pkl_path = f"/config/custom_components/notifyhelper/notifications/{entry.entry_id}.pkl"
+    if os.path.exists(json_path):
+        os.remove(json_path)
+        _LOGGER.debug(f"Removed file: {entry.entry_id}.json")
+    if os.path.exists(pkl_path):
+        os.remove(pkl_path)
+        _LOGGER.debug(f"Removed file: {entry.entry_id}.pkl")
 
     if not hass.data[DOMAIN]:
         hass.services.async_remove(SERVICE_DOMAIN, "all_person")
         hass.services.async_remove(SERVICE_DOMAIN, "notify_person")
         hass.services.async_remove(SERVICE_DOMAIN, "read")
         hass.data.pop(DOMAIN)
+
+
+async def notify_all(hass, call):
+    """Send notification to all"""
+    if not hass.data.get(DOMAIN):
+        _LOGGER.warning("No entries available for NotifyHelper to send notifications.")
+        return
+    else:
+        _LOGGER.debug(f"Input data: {call.data}")
+
+    tasks = [
+        hass.async_create_task(helper.send_notification(deepcopy(call.data)))
+        for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
+    ]
+
+
+async def notify(hass, call):
+    """Send notification to entry"""
+    if not hass.data.get(DOMAIN):
+        _LOGGER.warning("No entries available for NotifyHelper to send notifications.")
+        return
+    else:
+        _LOGGER.debug(f"Input data: {call.data}")
+
+    targets = call.data.get("targets", [])
+    if not targets:
+        _LOGGER.debug(f"{targets}")
+        _LOGGER.error(f"Please specify at least one target")
+        return
+    elif not isinstance(targets, list):
+        _LOGGER.debug(f"{targets}")
+        _LOGGER.error("Targets must be a list in YAML format.")
+        return
+    else:
+        _targets = set(targets)
+        tasks = [
+            hass.async_create_task(helper.send_notification(call.data))
+            for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
+            if entry_name in _targets
+        ]
+
+
+async def notification_read(hass, call):
+    """Read notification to entry"""
+    if not hass.data.get(DOMAIN):
+        _LOGGER.warning("No entries available for NotifyHelper to send notifications.")
+        return
+    else:
+        _LOGGER.debug(f"Input data: {call.data}")
+
+    targets = call.data.get("targets", [])
+    if not targets:
+        _LOGGER.debug(f"{targets}")
+        _LOGGER.error(f"Please specify at least one target")
+        return
+    elif not isinstance(targets, list):
+        _LOGGER.debug(f"{targets}")
+        _LOGGER.error("Targets must be a list in YAML format.")
+        return
+    else:
+        _targets = set(targets)
+        tasks = [
+            hass.async_create_task(helper.read(call.data))
+            for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
+            if entry_name in _targets
+        ]
