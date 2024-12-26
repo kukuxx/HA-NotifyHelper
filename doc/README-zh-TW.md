@@ -26,8 +26,7 @@
 
 - [English](/README.md) | [繁體中文](/doc/README-zh-TW.md)
 
-> 這是一個<b>Home assistan自訂整合</b>，可以保存和格式化已發送到行動應用程式的通知以便查看，
-  支持配置多人專屬通知面板。
+> 這是一個<b>Home assistan自訂整合</b>，可以一次向某人的所有行動裝置發送通知，並將通知顯示在定制的 Lovelace 卡片上，支持配置多人專屬通知面板。
 
 > 感謝 <b>Mark Wu</b> 提供的一些想法與測試。
 
@@ -116,20 +115,16 @@
 > <b>如果設置的參數都是通用的可以使用第一個範例不需要加上ios和android。<br>
 > 你可以針對ios和android傳送不同照片或影片但是通知只會保存其中一個，這點請注意。</b>
 
-- Markdown card 配置:
+- Lovelace card 配置:
 ```
-    type: markdown
-    content: |
-        {% set notifications =
-        state_attr('sensor.personname_notifications', 'notifications') %}
-        {% if notifications %}
-            
-            <div><font size="5">{{ notifications }}</font></div>
-            # size 可調整文字大小
-        {% else %}
-            <ha-alert alert-type="info">No notifications available.</ha-alert>
-        {% endif %}
+    type: custom:notifications-card
+    entity: sensor.yourname_notifications
+    font_size: 可選       // 文字大小，默認16px
+    line_height: 可選     // 行間距比例，默認1.5
+
 ```
+> [!Important]
+> 2.3.1版本開始請搭配 <a href='https://github.com/kukuxx/lovelace-notifications-card'>notifications-card</a> 使用。
 
 - Button card 配置:
 ```

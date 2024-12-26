@@ -3,7 +3,6 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN, CONF_IOS_DEVICES, CONF_ANDROID_DEVICES, CONF_ENTRY_NAME
 
@@ -59,14 +58,7 @@ class NotifyHelperConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             device for device in notify_services if device.startswith("mobile_app")
         ]
 
-        entity_registry = er.async_get(self.hass)
-        entities = entity_registry.entities.values()
-        person_entities = list(
-            map(
-                lambda entity: entity.entity_id,
-                filter(lambda e: e.entity_id.startswith("person."), entities)
-            )
-        )
+        person_entities = self.hass.states.async_entity_ids("person")
 
         # Schema
         schema = vol.Schema({
@@ -88,14 +80,11 @@ class NotifyHelperConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry):
         """Return the options flow handler."""
-        return NotifyHelperOptionsFlow(config_entry)
+        return NotifyHelperOptionsFlow()
 
 
 class NotifyHelperOptionsFlow(config_entries.OptionsFlow):
     """Handle options for NotifyHelper."""
-
-    def __init__(self, config_entry):
-        self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
         """Manage the options for NotifyHelper."""
@@ -103,7 +92,7 @@ class NotifyHelperOptionsFlow(config_entries.OptionsFlow):
 
         existing_entries = [
             entry for entry in self.hass.config_entries.async_entries(DOMAIN)
-            if entry.entry_id != self.config_entry.entry_id
+            if entry.entry_id != self._config_entry_id
         ]
         entry_names_set = set()
         ios_devices_set = set()
@@ -137,27 +126,17 @@ class NotifyHelperOptionsFlow(config_entries.OptionsFlow):
                     return self.async_create_entry(title=None, data=None)
 
         old_entry_name = self.config_entry.data.get(CONF_ENTRY_NAME, "")
+        person_entities = self.hass.states.async_entity_ids("person")
 
         notify_services = self.hass.services.async_services().get("notify", {})
         mobile_app_devices = [
             devices for devices in notify_services if devices.startswith("mobile_app")
         ]
-        old_ios_devices = [
-            device_id for device_id in self.config_entry.data.get(CONF_IOS_DEVICES, [])
-            if device_id in mobile_app_devices
-        ]
-        old_android_devices = [
-            device_id for device_id in self.config_entry.data.get(CONF_ANDROID_DEVICES, [])
-            if device_id in mobile_app_devices
-        ]
-
-        entity_registry = er.async_get(self.hass)
-        entities = entity_registry.entities.values()
-        person_entities = list(
-            map(
-                lambda entity: entity.entity_id,
-                filter(lambda e: e.entity_id.startswith("person."), entities)
-            )
+        old_ios_devices = list(
+            set(self.config_entry.data.get(CONF_IOS_DEVICES, [])) & set(mobile_app_devices)
+        )
+        old_android_devices = list(
+            set(self.config_entry.data.get(CONF_ANDROID_DEVICES, [])) & set(mobile_app_devices)
         )
 
         schema = vol.Schema({

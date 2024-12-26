@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import asyncio
 import logging
 
 from copy import deepcopy
@@ -147,6 +148,7 @@ async def notify_all(hass, call):
         hass.async_create_task(helper.send_notification(deepcopy(call.data)))
         for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
     ]
+    await asyncio.gather(*tasks)
 
 
 async def notify(hass, call):
@@ -173,6 +175,7 @@ async def notify(hass, call):
             for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
             if entry_name in _targets
         ]
+        await asyncio.gather(*tasks)
 
 
 async def notification_read(hass, call):
@@ -199,3 +202,4 @@ async def notification_read(hass, call):
             for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
             if entry_name in _targets
         ]
+        await asyncio.gather(*tasks)
