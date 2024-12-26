@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import asyncio
 import logging
 
 from copy import deepcopy
@@ -101,10 +102,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     try:
         # 停止 NotificationHelper 刪除sensor
-        entry = hass.data[DOMAIN].pop(entry.entry_id)
-        helper = entry[0]
-        await helper.stop()
-        entry = None
+        _entry = hass.data[DOMAIN].pop(entry.entry_id, None)
+        if _entry:
+            helper = _entry[0]
+            await helper.stop()
 
         return True
     except Exception as e:
@@ -128,7 +129,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         os.remove(pkl_path)
         _LOGGER.debug(f"Removed file: {entry.entry_id}.pkl")
 
-    if not hass.data[DOMAIN]:
+    if DOMAIN in hass.data and not hass.data[DOMAIN]:
         hass.services.async_remove(SERVICE_DOMAIN, "all_person")
         hass.services.async_remove(SERVICE_DOMAIN, "notify_person")
         hass.services.async_remove(SERVICE_DOMAIN, "read")
@@ -147,6 +148,7 @@ async def notify_all(hass, call):
         hass.async_create_task(helper.send_notification(deepcopy(call.data)))
         for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
     ]
+    await asyncio.gather(*tasks)
 
 
 async def notify(hass, call):
@@ -173,6 +175,7 @@ async def notify(hass, call):
             for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
             if entry_name in _targets
         ]
+        await asyncio.gather(*tasks)
 
 
 async def notification_read(hass, call):
@@ -199,3 +202,4 @@ async def notification_read(hass, call):
             for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
             if entry_name in _targets
         ]
+        await asyncio.gather(*tasks)

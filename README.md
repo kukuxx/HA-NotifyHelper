@@ -26,9 +26,7 @@
 
 - [English](/README.md) | [繁體中文](/doc/README-zh-TW.md)
 
-> This is a <b>Home assistant custom integration</b> that can save and format
-  notifications sent to mobile applications for viewing, and supports the configuration
-  of multi-person exclusive notification panels.
+> This is a <b>Home assistant custom integration</b>, It allows you to send notifications to all mobile devices of a person at once and display notifications on a custom Lovelace card, and supports the configuration of multi-person exclusive notification card.
 
 > Thanks to <b>Mark Wu</b> for some ideas and tests.
 
@@ -128,20 +126,16 @@
 you can use the first example without adding ios and android.<br>
 > You can send different photos or videos for ios and android but the notification will only save one of them, please be aware of this. </b>
 
-- Markdown card configuration:
+- Lovelace card configuration:
 ```
-    type: markdown
-    content: |
-        {% set notifications =
-        state_attr('sensor.personname_notifications', 'notifications') %}
-        {% if notifications %}
-            
-            <div><font size="5">{{ notifications }}</font></div>
-            # "size" adjustable text size
-        {% else %}
-            <ha-alert alert-type="info">No notifications available.</ha-alert>
-        {% endif %}
+    type: custom:notifications-card
+    entity: sensor.yourname_notifications
+    font_size: optional       // text size, default 16px
+    line_height: optional    // line spacing ratio, default 1.5
+
 ```
+> [!Important]
+> Starting from version 2.3.1, please use it with <a href='https://github.com/kukuxx/lovelace-notifications-card'>notifications-card</a>.
 
 - Button card configuration:
 ```

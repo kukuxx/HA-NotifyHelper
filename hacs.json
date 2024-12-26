@@ -3,5 +3,5 @@
     "render_readme": true,
     "documentation": "https://github.com/kukuxx/HA-NotifyHelper",
     "issue_tracker": "https://github.com/kukuxx/HA-NotifyHelper/issues",
-    "homeassistant": "2024.10.0"
+    "homeassistant": "2024.12.0"
 }

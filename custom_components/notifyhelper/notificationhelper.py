@@ -80,11 +80,8 @@ class NotificationHelper:
             if old_dict:
                 notifications = old_dict[self.entry_id][0]
                 badge = old_dict[self.entry_id][1]
-                if isinstance(notifications, deque):
-                    self._notifications_dict = old_dict
-                elif isinstance(notifications, list):
-                    self._notifications_dict[self.entry_id
-                                             ] = [deque(notifications, maxlen=self.limit), badge]
+                self._notifications_dict[self.entry_id
+                                         ] = [deque(notifications, maxlen=self.limit), badge]
             else:
                 self._notifications_dict[self.entry_id] = [deque(maxlen=self.limit), 0]
 
@@ -178,46 +175,55 @@ class NotificationHelper:
         """保存通知(save notification)"""
         try:
             async with self._lock:
-                notifications_dq = self._notifications_dict.get(self.entry_id)[0].copy()
+                notifications_dq = self._notifications_dict.get(self.entry_id)[0]
 
-            timestamp = as_timestamp(now())
-            send_time = now().strftime("%Y-%m-%d %H:%M:%S")
-            message = data.get("message", "No message")
-            title = data.get("title", "Notification")
-            color = data.get("color", None)
-            # 建立通知
-            notification_parts = [
-                f"<ha-alert alert-type='info'><strong>{title}</strong></ha-alert>",
-            ]
+                timestamp = as_timestamp(now())
+                send_time = now().strftime("%Y-%m-%d %H:%M:%S")
+                message = data.get("message", "No message")
+                title = data.get("title", "Notification")
+                color = data.get("color", None)
+                # 建立通知
+                notification_parts = [
+                    f"<ha-alert alert-type='info'><strong>{title}</strong></ha-alert>",
+                ]
 
-            if not color:
-                notification_parts.append(f"<blockquote>{message}<br>")
-            else:
-                notification_parts.append(f"<blockquote><font color='{color}'>{message}</font><br>")
-
-            if image:
-                if await self.check_url(image):
-                    notification_parts.append(f"<br><img src='{image}'/><br>")
-                else:
-                    notification_parts.append(f"<br><img src='{image}?timestamp={timestamp}'/><br>")
-
-            if video:
-                if await self.check_url(video):
-                    notification_parts.append(f"<br><a href='{video}'>Show Video</a><br>")
+                if not color:
+                    notification_parts.append(f"<blockquote>{message}<br>")
                 else:
                     notification_parts.append(
-                        f"<br><a href='{video}?timestamp={timestamp}'>Show Video</a><br>"
+                        f"<blockquote><font color='{color}'>{message}</font><br>"
                     )
 
-            notification_parts.append(f"<br><b><i>{send_time}</i></b></blockquote>")
-            # 拼接成完整的字符串
-            notification = ''.join(notification_parts)
+                if image:
+                    if await self.check_url(image):
+                        notification_parts.append(f"<br><img src='{image}'/><br>")
+                    else:
+                        notification_parts.append(
+                            f"<br><img src='{image}?timestamp={timestamp}'/><br>"
+                        )
 
-            async with self._lock:
+                if video:
+                    video_type, url_bool = await self.check_url(video)
+                    if url_bool:
+                        notification_parts.append(
+                            f"<br><video controls preload='metadata'>"
+                            f"<source src='{video}' type='video/{video_type}'>"
+                            f"</video><br>"
+                        )
+                    else:
+                        video_extension = video.split(".")[-1].lower()
+                        notification_parts.append(
+                            f"<br><video controls preload='metadata'>"
+                            f"<source src='{video}?timestamp={timestamp}' type='video/{video_extension}'>"
+                            f"</video><br>"
+                        )
+
+                notification_parts.append(f"<br><b><i>{send_time}</i></b></blockquote>")
+                # 拼接成完整的字符串
+                notification = ''.join(notification_parts)
                 # 將新通知加入deque #
                 notifications_dq.appendleft(notification)
-                self._notifications_dict[self.entry_id
-                                         ] = [deque(notifications_dq, maxlen=self.limit), badge]
+                self._notifications_dict[self.entry_id][1] = badge
                 await self.save_notifications_dict()
 
         except Exception as e:
@@ -226,21 +232,24 @@ class NotificationHelper:
     async def check_url(self, url):
         """check url"""
         result = urlparse(url)
-        return result.scheme in ['http', 'https']
+        file_path = result.path
+        video_type = file_path.split('.')[-1].lower() if '.' in file_path else None
+        url_bool = result.scheme in ['http', 'https']
+        return video_type, url_bool
 
     async def update_notification_log(self):
         """將通知列表更新到sensor(update sensor)"""
         try:
             async with self._lock:
-                notification_log = self._notifications_dict[self.entry_id][0].copy()
+                notification_dq = self._notifications_dict[self.entry_id][0].copy()
 
-            if notification_log:
-                notification_str = '\n'.join(notification_log)
+            if notification_dq:
+                # notification_str = '\n'.join(notification_dq)
                 # 更新 sensor
                 self.hass.states.async_set(
                     f"sensor.{self.entry_name}_notifications",
                     f"{self.entry_name} notifications",
-                    attributes={"notifications": notification_str}
+                    attributes={"notifications": list(notification_dq)}
                 )
             else:
                 self.hass.states.async_set(
@@ -265,22 +274,18 @@ class NotificationHelper:
         """將通知中的 info 類型更改為 success 類型(change alert-type info to success)"""
         try:
             async with self._lock:
-                notifications_dq = self._notifications_dict.get(self.entry_id)[0].copy()
-            # 如果該通知不為空
-            if notifications_dq:
-                notifications_dq = deque(
-                    map(
-                        lambda notification: notification.
-                        replace('alert-type=\'info\'', 'alert-type=\'success\'')
-                        if 'alert-type=\'info\'' in notification else notification, notifications_dq
-                    )
-                )
-
-                async with self._lock:
+                notifications_dq = self._notifications_dict.get(self.entry_id)[0]
+                # 如果該通知不為空
+                if notifications_dq:
+                    notifications_dq = [
+                        notification.replace('alert-type=\'info\'', 'alert-type=\'success\'')
+                        if 'alert-type=\'info\'' in notification else notification
+                        for notification in notifications_dq
+                    ]
                     self._notifications_dict[self.entry_id
                                              ] = [deque(notifications_dq, maxlen=self.limit), 0]
                     await self.save_notifications_dict()
-            else:
-                _LOGGER.warning(f"No valid notifications found for {self.entry_name}")
+                else:
+                    _LOGGER.warning(f"No valid notifications found for {self.entry_name}")
         except Exception as e:
             _LOGGER.error(f"Error replacing {self.entry_name} notifications: {e}")
