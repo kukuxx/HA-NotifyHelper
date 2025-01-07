@@ -65,16 +65,32 @@
 #       required: false
 #       selector:
 #         object: {}
-# read:
-#   name: Read notification
-#   description: Read notification
-#   fields:
-#     targets:
-#       description: Designated person
-#       example: 
-#         - person.1
-#         - person.2
-#       required: true
-#       selector:
-#         object: {}
+read:
+  name: Read notification
+  description: Read notifications
+  fields:
+    targets:
+      description: Designated person
+      example: "[person.1,person.2]"
+      required: true
+      selector:
+        object: {"type": "array",
+                  "items": {
+                      "type": "string"
+                  }
+                }
+clear:
+  name: Clear notification
+  description: Clear all notifications
+  fields:
+    targets:
+      description: Designated person
+      example: "[person.1,person.2]"
+      required: true
+      selector:
+        object: {"type": "array",
+                  "items": {
+                      "type": "string"
+                  }
+                }
       
