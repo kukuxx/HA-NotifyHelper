@@ -30,12 +30,7 @@
 
 > Thanks to <b>Mark Wu</b> for some ideas and tests.
 
-> [!Important]
-> <b>Since version 2.3.0 has changed a lot, please remember to go to Integration -- Integrated Entries -- Click Settings to reconfigure after the update:</b>
-![image](/doc/update_settings1.png) <br>
-![image](/doc/update_settings2.png)
-
-> [!Important]
+> [!Tip]
 > If you keep getting notifications for old pictures or videos, please see 
 <a href='https://community.home-assistant.io/t/home-assistant-sends-cached-images-in-ios-notification/520766'>here.</a>
 
@@ -43,6 +38,14 @@
 > If you encounter a bug during use, <br>
 > please enable <b>debug mode</b> in the integration and try the original operation, <br>
 > then open issues and post the log.
+
+## Changelog
+
+##### V2.4.0
+- <a href='https://github.com/kukuxx/HA-NotifyHelper/releases/tag/2.4.0'>See details here.</a>
+
+##### V2.3.0
+- <a href='https://github.com/kukuxx/HA-NotifyHelper/releases/tag/2.3.0'>See details here.</a>
 
 ## Instructions for use  
 
@@ -83,11 +86,15 @@
                     image: /local/icon.png
     mode: single
 ```
+> [!Important]
+> <b>The iOS badge is automatically configured and requires no manual setup. The URL can be specified during integration setup, but any URL defined in automation will override the default.</b>
+
 > [!Tip]
 > <b>targets: <i>must be a list.</i></b><br>
 > <b>color: <i>Optional, specify the message color please fill in Hex rgb,
 > the default is None.</i></b><br>
-> <b>data: <i>Optional, Refer to <a href='https://companion.home-assistant.io/docs/notifications/notifications-basic'>HA doc.</a></i></b>
+> <b>data: <i>Optional, Refer to <a href='https://companion.home-assistant.io/docs/notifications/notifications-basic'>HA doc.</a></i></b><br>
+
 
 - The data parameters accepted by Android and ios are different, if you want to set them separately, you can add <b>ios</b> and <b>android</b> to the data.
 <br>The following is an automation example:
@@ -131,7 +138,7 @@ you can use the first example without adding ios and android.<br>
     type: custom:notifications-card
     entity: sensor.yourname_notifications
     font_size: optional       // text size, default 16px
-    line_height: optional    // line spacing ratio, default 1.5
+    line_height: optional    // line spacing ratio, default 1.0
 
 ```
 > [!Important]
@@ -144,7 +151,7 @@ you can use the first example without adding ios and android.<br>
     type: button
     tap_action:
         action: perform-action
-        perform_action: notify.read
+        perform_action: notifyhelper.read
         target: {}
         data:
             targets:
@@ -155,9 +162,10 @@ you can use the first example without adding ios and android.<br>
 > <b>targets: <i>must be a list.</i></b>
 
 > [!NOTE]
-> It is not necessary to create a button card to complete the reading,<br>
-  service calls can also be made using automation. <br>
-  Please configure according to personal needs.
+> You don’t necessarily need to create a button card to mark notifications as read.<br>
+> You can also use automation to call the service.<br>
+> The same applies to clear notifications.<br>
+> Please configure it according to your personal needs.
 
 ## Achievements Display   
 

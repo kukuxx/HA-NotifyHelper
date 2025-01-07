@@ -2,31 +2,44 @@ import voluptuous as vol
 
 DOMAIN = "notifyhelper"
 SERVICE_DOMAIN = "notify"
-SERVICES = ["all_person", "notify_person", "read"]
+SERVICES = ["all_person", "notify_person"]
+CONF_URL = "url"
 CONF_ENTRY_NAME = "entry_name"
 CONF_IOS_DEVICES = "ios_devices"
 CONF_ANDROID_DEVICES = "android_devices"
 
-ALL_PERSON_SCHEMA = vol.Schema({
-    vol.Required("message"): str,
-    vol.Optional("title", default=""): str,
-    vol.Optional("color", default=""): str,
-    vol.Optional("data", default={}): dict,
-})
-
-NOTIFY_PERSON_SCHEMA = vol.All(
-    vol.Schema({
+ALL_PERSON_SCHEMA = vol.Schema(
+    {
         vol.Required("message"): str,
-        vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
         vol.Optional("title", default=""): str,
         vol.Optional("color", default=""): str,
         vol.Optional("data", default={}): dict,
+    }
+)
+
+NOTIFY_PERSON_SCHEMA = vol.All(
+    vol.Schema(
+        {
+            vol.Required("message"): str,
+            vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
+            vol.Optional("title", default=""): str,
+            vol.Optional("color", default=""): str,
+            vol.Optional("data", default={}): dict,
+        }
+    )
+)
+
+READ_SCHEMA = vol.All(
+    vol.Schema({
+        vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
     })
 )
 
-READ_SCHEMA = vol.All(vol.Schema({
-    vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
-}))
+CLEAR_SCHEMA = vol.All(
+    vol.Schema({
+        vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
+    })
+)
 
 ALL_PERSON_DESCRIBE_SCHEMA = {
     "name": "Notify all person",
@@ -83,7 +96,7 @@ NOTIFY_PERSON_DESCRIBE_SCHEMA = {
         },
         "targets": {
             "description": "Designated person",
-            "example": ["person.1", "person.2"],
+            "example": "[person.1,person.2]",
             "required": True,
             "selector": {
                 "object": {
@@ -123,28 +136,27 @@ NOTIFY_PERSON_DESCRIBE_SCHEMA = {
     },
 }
 
-READ_DESCRIBE_SCHEMA = {
-    "name": "Read notifitaion",
-    "description": "Read notifitaion",
-    "fields": {
-        "targets": {
-            "description": "Designated person",
-            "example": ["person.1", "person.2"],
-            "required": True,
-            "selector": {
-                "object": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-    }
-}
+# READ_DESCRIBE_SCHEMA = {
+#     "name": "Read notifitaion",
+#     "description": "Read notifitaion",
+#     "fields": {
+#         "targets": {
+#             "description": "Designated person",
+#             "example": "['person.1', 'person.2']",
+#             "required": True,
+#             "selector": {
+#                 "object": {
+#                     "type": "array",
+#                     "items": {
+#                         "type": "string"
+#                     }
+#                 }
+#             }
+#         },
+#     }
+# }
 
 SERVICE_DESCRIBE_SCHEMA = {
     "all_person": ALL_PERSON_DESCRIBE_SCHEMA,
     "notify_person": NOTIFY_PERSON_DESCRIBE_SCHEMA,
-    "read": READ_DESCRIBE_SCHEMA,
 }

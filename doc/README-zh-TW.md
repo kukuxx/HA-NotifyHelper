@@ -30,16 +30,19 @@
 
 > 感謝 <b>Mark Wu</b> 提供的一些想法與測試。
 
-> [!Important]
-> <b>因為2.3.0版本修改較多東西更新後請記得到整合--整合實體--點擊設定，進行重新配置:</b>
-![image](/doc/update_settings1.png) <br>
-![image](/doc/update_settings2.png)
-
-> [!Important]
+> [!Tip]
 > 如果遇到通知一直收到舊圖片或影片請看 <a href='https://community.home-assistant.io/t/home-assistant-sends-cached-images-in-ios-notification/520766'>這裡。</a>
 
 > [!Tip]
 > 如果在使用過程中遇到bug，請先在整合裡<b>啟用偵錯</b>嘗試原本的操作之後，開啟issues把log貼上來。
+
+## 變更日誌
+
+##### V2.4.0
+- <a href='https://github.com/kukuxx/HA-NotifyHelper/releases/tag/2.4.0'>請查看說明。</a>
+
+##### V2.3.0
+- <a href='https://github.com/kukuxx/HA-NotifyHelper/releases/tag/2.3.0'>請查看說明。</a>
 
 ## 使用教學
 
@@ -76,10 +79,14 @@
                     image: /local/icon.png
     mode: single
 ```
+> [!Important]
+> <b>iOS badge會自動配置，無需手動設置。URL 可以在整合配置時設定，但如果在自動化中指定，將會覆蓋預設的 URL。</b>
+
 > [!Tip]
 > <b>targets: <i>必須為列表型式。</i></b><br>
 > <b>color: <i>可選，要指定訊息顏色請填上 Hex rgb，預設為None。</i></b><br>
-> <b>data: <i>可選， 參考<a href='https://companion.home-assistant.io/docs/notifications/notifications-basic'>HA文檔。</a></i></b>
+> <b>data: <i>可選， 參考<a href='https://companion.home-assistant.io/docs/notifications/notifications-basic'>HA文檔。</a></i></b><br>
+
 
 - Android和ios可以接受的data參數都不一樣，如果想分別設置可以在data裡加上<b>ios</b>和<b>android</b>，以下是一個自動化範例:
 ```
@@ -120,7 +127,7 @@
     type: custom:notifications-card
     entity: sensor.yourname_notifications
     font_size: 可選       // 文字大小，默認16px
-    line_height: 可選     // 行間距比例，默認1.5
+    line_height: 可選     // 行間距比例，默認1.0
 
 ```
 > [!Important]
@@ -133,7 +140,7 @@
     type: button
     tap_action:
         action: perform-action
-        perform_action: notify.read
+        perform_action: notifyhelper.read
         target: {}
         data:
             targets:
@@ -146,6 +153,7 @@
 > [!NOTE]
 > 不一定要建立button卡片來完成已讀，<br>
   也可以用自動化進行服務呼叫，<br>
+  清空通知也是一樣，<br>
   請按個人需求來配置。    
 
 ## 成果展示

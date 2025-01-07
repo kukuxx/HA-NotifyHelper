@@ -1,38 +1,40 @@
 {
     "config": {
-        "title": "Notify Helper",
         "step": {
             "user": {
                 "title": "Configure Your Notify Helper",
                 "data": {
-                    "entry_name": "Select Person",
+                    "entry_name": "Select Person:",
+                    "url": "Optional, default URL (e.g.:notification dashboard URL)",
                     "ios_devices": "Select the ios devices you want to notify:",
                     "android_devices": "Select the android devices you want to notify:"
                 }
             }
         },
         "error": {
-            "name_exists": "An entry with this name already exists.",
+            "name_exists": "This person already exists.",
             "no_device": "You must select at least one device.",
-            "devices_conflict": "The device already exists"
+            "devices_conflict": "The device already exists",
+            "url_error": "Invalid URL, missing '/' at the beginning"
         }
     },
     "options": {
-        "title": "Notify Helper",
         "step": {
             "init": {
                 "title": "Update Notify Helper Options",
                 "data": {
-                    "entry_name": "Select Person",
+                    "entry_name": "Select Person:",
+                    "url": "Optional, default URL (e.g.:notification dashboard URL)",
                     "ios_devices": "Select the ios devices you want to notify:",
                     "android_devices": "Select the android devices you want to notify:"
                 }
             }
         },
         "error": {
-            "name_exists": "An entry with this name already exists.",
+            "name_exists": "This person already exists.",
             "no_device": "You must select at least one device.",
-            "devices_conflict": "The device already exists"
+            "devices_conflict": "The device already exists",
+            "url_error": "Invalid URL, missing '/' at the beginning"
         }
     }
 }

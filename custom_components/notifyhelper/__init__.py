@@ -18,10 +18,12 @@ from .const import (
     CONF_IOS_DEVICES,
     CONF_ANDROID_DEVICES,
     CONF_ENTRY_NAME,
+    CONF_URL,
     SERVICE_DOMAIN,
     ALL_PERSON_SCHEMA,
     NOTIFY_PERSON_SCHEMA,
     READ_SCHEMA,
+    CLEAR_SCHEMA,
     SERVICE_DESCRIBE_SCHEMA,
     SERVICES,
 )
@@ -39,16 +41,20 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             os.makedirs(notifications_prth)
 
         async def service_notify_all(call: ServiceCall):
-            """Service that sends notification to all entries."""
+            """Service that send notification to all entries."""
             await notify_all(hass, call)
 
         async def service_notify(call: ServiceCall):
-            """Service that sends notifications to specific entries."""
+            """Service that send notifications to specific entries."""
             await notify(hass, call)
 
         async def service_read(call: ServiceCall):
-            """Service that reads notifications to specific entries."""
+            """Service that read notifications to specific entries."""
             await notification_read(hass, call)
+
+        async def service_clear(call: ServiceCall):
+            """Service that clear notifications to specific entries."""
+            await notification_clear(hass, call)
 
         hass.services.async_register(
             SERVICE_DOMAIN, "all_person", service_notify_all, schema=ALL_PERSON_SCHEMA
@@ -56,7 +62,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         hass.services.async_register(
             SERVICE_DOMAIN, "notify_person", service_notify, schema=NOTIFY_PERSON_SCHEMA
         )
-        hass.services.async_register(SERVICE_DOMAIN, "read", service_read, schema=READ_SCHEMA)
+        hass.services.async_register(DOMAIN, "read", service_read, schema=READ_SCHEMA)
+        hass.services.async_register(DOMAIN, "clear", service_clear, schema=CLEAR_SCHEMA)
 
         for service_name in SERVICES:
             async_set_service_schema(
@@ -75,10 +82,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # 取得裝置配置
         ios_devices = entry.data.get(CONF_IOS_DEVICES, [])
         android_devices = entry.data.get(CONF_ANDROID_DEVICES, [])
-        entry_name = entry.data.get(CONF_ENTRY_NAME, "")
+        entry_name = entry.data.get(CONF_ENTRY_NAME)
+        url = entry.data.get(CONF_URL, None)
         entry_id = entry.entry_id
 
-        helper = NotificationHelper(hass, ios_devices, android_devices, entry_id, entry_name)
+        helper = NotificationHelper(
+            hass, entry_id, entry_name, ios_devices, android_devices, url
+        )
         hass.data.setdefault(DOMAIN, {})[entry_id] = [helper, entry_name]
         await helper.start()
 
@@ -132,8 +142,31 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if DOMAIN in hass.data and not hass.data[DOMAIN]:
         hass.services.async_remove(SERVICE_DOMAIN, "all_person")
         hass.services.async_remove(SERVICE_DOMAIN, "notify_person")
-        hass.services.async_remove(SERVICE_DOMAIN, "read")
+        hass.services.async_remove(DOMAIN, "read")
+        hass.services.async_remove(DOMAIN, "clear")
         hass.data.pop(DOMAIN)
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate config entry."""
+    if entry.version > 2:
+        # 未來版本無法處理
+        return False
+
+    if entry.version < 2:
+        # 舊版本更新資料
+        data = deepcopy(dict(entry.data))
+        for key, value in entry.data.items():
+            if key not in (
+                CONF_ENTRY_NAME, CONF_URL, CONF_IOS_DEVICES, CONF_ANDROID_DEVICES
+            ):
+                data.pop(key)
+
+        data.setdefault(CONF_URL, "")
+        data.setdefault(CONF_IOS_DEVICES, [])
+        data.setdefault(CONF_ANDROID_DEVICES, [])
+        hass.config_entries.async_update_entry(entry, version=2, data=data)
+    return True
 
 
 async def notify_all(hass, call):
@@ -169,19 +202,26 @@ async def notify(hass, call):
         _LOGGER.error("Targets must be a list in YAML format.")
         return
     else:
-        _targets = set(targets)
-        tasks = [
-            hass.async_create_task(helper.send_notification(call.data))
-            for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
-            if entry_name in _targets
-        ]
+        if len(targets) > 1:
+            tasks = [
+                hass.async_create_task(helper.send_notification(deepcopy(call.data)))
+                for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
+                if entry_name in targets
+            ]
+        else:
+            tasks = [
+                hass.async_create_task(helper.send_notification(call.data))
+                for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
+                if entry_name in targets
+            ]
+
         await asyncio.gather(*tasks)
 
 
 async def notification_read(hass, call):
     """Read notification to entry"""
     if not hass.data.get(DOMAIN):
-        _LOGGER.warning("No entries available for NotifyHelper to send notifications.")
+        _LOGGER.warning("No entries available for NotifyHelper to read notifications.")
         return
     else:
         _LOGGER.debug(f"Input data: {call.data}")
@@ -196,10 +236,35 @@ async def notification_read(hass, call):
         _LOGGER.error("Targets must be a list in YAML format.")
         return
     else:
-        _targets = set(targets)
         tasks = [
             hass.async_create_task(helper.read(call.data))
             for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
-            if entry_name in _targets
+            if entry_name in targets
+        ]
+        await asyncio.gather(*tasks)
+
+
+async def notification_clear(hass, call):
+    """Clear notification to entry"""
+    if not hass.data.get(DOMAIN):
+        _LOGGER.warning("No entries available for NotifyHelper to clear notifications.")
+        return
+    else:
+        _LOGGER.debug(f"Input data: {call.data}")
+
+    targets = call.data.get("targets", [])
+    if not targets:
+        _LOGGER.debug(f"{targets}")
+        _LOGGER.error(f"Please specify at least one target")
+        return
+    elif not isinstance(targets, list):
+        _LOGGER.debug(f"{targets}")
+        _LOGGER.error("Targets must be a list in YAML format.")
+        return
+    else:
+        tasks = [
+            hass.async_create_task(helper.clear(call.data))
+            for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
+            if entry_name in targets
         ]
         await asyncio.gather(*tasks)
