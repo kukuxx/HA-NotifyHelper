@@ -15,7 +15,9 @@ _LOGGER = logging.getLogger(__name__)
 
 class NotificationHelper:
 
-    def __init__(self, hass, entry_id, entry_name, ios_devices, android_devices, url):
+    def __init__(
+        self, hass, entry_id, entry_name, ios_devices, android_devices, url
+    ):
         self.hass = hass
         self.entry_id = entry_id
         self.entry_name = entry_name.split(".")[1]
@@ -59,14 +61,18 @@ class NotificationHelper:
                 )
 
             elif os.path.exists(json_file_pash):
-                async with aiofiles.open(json_file_pash, 'r', encoding='utf-8') as f:
+                async with aiofiles.open(
+                    json_file_pash, 'r', encoding='utf-8'
+                ) as f:
                     contents = await f.read()
                     _dict = json.loads(contents)
                 _LOGGER.debug(
                     f"{self.entry_name}: Notification file loaded successfully."
                 )
             else:
-                _LOGGER.debug(f"{self.entry_name}: No notification file found.")
+                _LOGGER.debug(
+                    f"{self.entry_name}: No notification file found."
+                )
 
         except (EOFError, pickle.UnpicklingError) as e:
             # 文件損壞
@@ -89,7 +95,8 @@ class NotificationHelper:
                     deque(notifications, maxlen=self.limit), badge
                 ]
             else:
-                self._notifications_dict[self.entry_id] = [deque(maxlen=self.limit), 0]
+                self._notifications_dict[self.entry_id
+                                         ] = [deque(maxlen=self.limit), 0]
 
             await self.update_notification_log()
 
@@ -106,150 +113,140 @@ class NotificationHelper:
 
     async def send_notification(self, data):
         """發送通知(send notification)"""
+
+        async def _send_to_devices(devices, p_data):
+            if not devices:
+                return []
+
+            if self._url:
+                p_data.setdefault("url", self._url)
+
+            notification_payload = {
+                "message": message,
+                "title": title,
+                "data": p_data,
+            }
+
+            return [
+                self.hass.async_create_task(
+                    self.hass.services.async_call(
+                        "notify", device_id, notification_payload
+                    )
+                ) for device_id in devices
+            ]
+
         try:
-            _data = dict(data)
-            _LOGGER.debug(f"{self.entry_name}: {_data}")
-            if not _data.get("title", None):
-                _data["title"] = "Notification"
-            parameter_data = _data.setdefault("data", {})
-            android_data = parameter_data.setdefault("android", {})
-            ios_data = parameter_data.setdefault("ios", {})
-            image = parameter_data.get("image", None)
-            video = parameter_data.get("video", None)
-            badge = self._notifications_dict[self.entry_id][1] + 1
-
-            if not android_data and not ios_data:
-                if self._url:
-                    parameter_data.setdefault("url", self._url)
-                parameter_data.setdefault("push", {}).update({"badge": badge})
+            async with self._lock:
+                _data = dict(data)
                 _LOGGER.debug(f"{self.entry_name}: {_data}")
-                devices = self._ios_devices_id + self._android_devices_id
 
-                tasks = [
-                    self.hass.async_create_task(
-                        self.hass.services.async_call(
-                            "notify", device_id, {
-                                "message": _data.get("message", "No message"),
-                                "title": _data.get("title"),
-                                "data": _data.get("data")
-                            }
+                _data.setdefault("title", "Notification")
+                _data.setdefault("message", "No message")
+                parameters_data = _data.setdefault("data", {})
+                badge = self._notifications_dict[self.entry_id][1] + 1
+                message = _data["message"]
+                title = _data["title"]
+
+                tasks = []
+
+                if "android" not in parameters_data and "ios" not in parameters_data:
+                    image = parameters_data.get("image")
+                    video = parameters_data.get("video")
+                    parameters_data.setdefault("push",
+                                               {}).update({"badge": badge})
+                    tasks = await _send_to_devices(
+                        self._ios_devices_id + self._android_devices_id,
+                        parameters_data
+                    )
+                else:
+                    android_data = parameters_data.get("android")
+                    ios_data = parameters_data.get("ios")
+                    image = (android_data and android_data.get("image")) or \
+                            (ios_data and ios_data.get("image"))
+                    video = (android_data and android_data.get("video")) or \
+                            (ios_data and ios_data.get("video"))
+
+                    if android_data:
+                        android_tasks = await _send_to_devices(
+                            self._android_devices_id, android_data
                         )
-                    ) for device_id in devices
-                ]
+                        tasks.extend(android_tasks)
 
-            elif self._android_devices_id and android_data:
-                if self._url:
-                    android_data.setdefault("url", self._url)
-                image = android_data.get("image", None)
-                video = android_data.get("video", None)
-
-                android_tasks = [
-                    self.hass.async_create_task(
-                        self.hass.services.async_call(
-                            "notify", device_id, {
-                                "message": _data.get("message", "No message"),
-                                "title": _data.get("title"),
-                                "data": _data.get("data").get("android")
-                            }
+                    if ios_data:
+                        ios_data.setdefault("push",
+                                            {}).update({"badge": badge})
+                        ios_tasks = await _send_to_devices(
+                            self._ios_devices_id, ios_data
                         )
-                    ) for device_id in self._android_devices_id
-                ]
+                        tasks.extend(ios_tasks)
 
-            if self._ios_devices_id and ios_data:
-                if self._url:
-                    ios_data.setdefault("url", self._url)
-                ios_data.setdefault("push", {}).update({"badge": badge})
-                _LOGGER.debug(f"{self.entry_name}: {_data}")
-                image = ios_data.get("image", None)
-                video = ios_data.get("video", None)
+                if tasks:
+                    await asyncio.gather(*tasks)
 
-                ios_tasks = [
-                    self.hass.async_create_task(
-                        self.hass.services.async_call(
-                            "notify", device_id, {
-                                "message": _data.get("message", "No message"),
-                                "title": _data.get("title"),
-                                "data": _data.get("data").get("ios")
-                            }
-                        )
-                    ) for device_id in self._ios_devices_id
-                ]
-
-            await self.save_notification(_data, badge, image, video)
-            await self.update_notification_log()
+                await self.save_notification(_data, badge, image, video)
+                await self.save_notifications_dict()
+                await self.update_notification_log()
 
         except KeyError as e:
             _LOGGER.error(f"Get {self.entry_name} data error: {e}")
         except Exception as e:
-            _LOGGER.error(f"Failed to send notification for {self.entry_name}: {e}")
+            _LOGGER.error(
+                f"Failed to send notification for {self.entry_name}: {e}"
+            )
 
     async def save_notification(self, data, badge, image, video):
-        """保存通知(save notification)"""
+        """保存通知 (save notification)"""
         try:
-            async with self._lock:
-                notifications_dq = self._notifications_dict.get(self.entry_id)[0]
+            notifications_dq = self._notifications_dict[self.entry_id][0]
+            timestamp = as_timestamp(now())
+            send_time = now().strftime("%Y-%m-%d %H:%M:%S")
+            message = data["message"]
+            title = data["title"]
+            color = data.get("color", None)
 
-                timestamp = as_timestamp(now())
-                send_time = now().strftime("%Y-%m-%d %H:%M:%S")
-                message = data.get("message", "No message")
-                title = data.get("title", "Notification")
-                color = data.get("color", None)
-                # 建立通知
-                notification_parts = [
-                    f"<ha-alert alert-type='info'><strong>{title}</strong></ha-alert>",
-                ]
+            message_html = f"<font color='{color}'>{message}</font>" if color else message
+            notification_parts = [
+                f"<ha-alert alert-type='info'><strong>{title}</strong></ha-alert>",
+                f"<blockquote>{message_html}",
+            ]
 
-                if not color:
-                    notification_parts.append(f"<blockquote>{message}")
-                else:
-                    notification_parts.append(
-                        f"<blockquote><font color='{color}'>{message}</font>"
-                    )
-
-                if image:
-                    if await self.check_url(image):
-                        notification_parts.append(f"<br><br><img src='{image}'/>")
-                    else:
-                        notification_parts.append(
-                            f"<br><br><img src='{image}?timestamp={timestamp}'/>"
-                        )
-
-                if video:
-                    video_type, url_bool = await self.check_url(video)
-                    if url_bool:
-                        notification_parts.append(
-                            f"<br><br><video controls preload='metadata'>"
-                            f"<source src='{video}' type='video/{video_type}'>"
-                            f"</video>"
-                        )
-                    else:
-                        video_extension = video.split(".")[-1].lower()
-                        notification_parts.append(
-                            f"<br><br><video controls preload='metadata'>"
-                            f"<source src='{video}?timestamp={timestamp}' type='video/{video_extension}'>"
-                            f"</video>"
-                        )
-
+            if image:
+                _, url_bool = self.check_url(image)
+                timestamp_suffix = "" if url_bool else f"?timestamp={timestamp}"
                 notification_parts.append(
-                    f"<br><br><b><i>{send_time}</i></b></blockquote>"
+                    f"<br><br><img src='{image}{timestamp_suffix}'/>"
                 )
-                # 拼接成完整的字符串
-                notification = ''.join(notification_parts)
-                # 將新通知加入deque #
-                notifications_dq.appendleft(notification)
-                self._notifications_dict[self.entry_id][1] = badge
-                await self.save_notifications_dict()
+
+            if video:
+                video_type, url_bool = self.check_url(video)
+                timestamp_suffix = "" if url_bool else f"?timestamp={timestamp}"
+                notification_parts.append(
+                    f"<br><br><video controls preload='metadata'>"
+                    f"<source src='{video}{timestamp_suffix}' type='video/{video_type}'>"
+                    f"</video>"
+                )
+
+            notification_parts.append(
+                f"<br><br><b><i>{send_time}</i></b></blockquote>"
+            )
+            # 添加通知並更新 badge
+            notifications_dq.appendleft("".join(notification_parts))
+            self._notifications_dict[self.entry_id][1] = badge
 
         except Exception as e:
             _LOGGER.error(f"Save {self.entry_name} notification Error: {e}")
 
-    async def check_url(self, url):
+    def check_url(self, url):
         """check url"""
+        valid_extensions = {
+            "mp4", "avi", "mov", "png", "jpg", "jpeg", "gif", "webp"
+        }
         result = urlparse(url)
-        file_path = result.path
-        video_type = file_path.split('.')[-1].lower() if '.' in file_path else None
         url_bool = result.scheme in ['http', 'https']
-        return video_type, url_bool
+        path = result.path
+        file_type = path.split('.')[-1].lower() \
+                    if '.' in path and path.split('.')[-1].lower() in valid_extensions else None
+        return file_type, url_bool
 
     async def update_notification_log(self):
         """將通知列表更新到sensor(update sensor)"""
@@ -264,7 +261,9 @@ class NotificationHelper:
                     f"{self.entry_name} notifications",
                     attributes={"notifications": list(notification_dq)}
                 )
-                _LOGGER.debug(f"{self.entry_name}:Notification updated successfully")
+                _LOGGER.debug(
+                    f"{self.entry_name}:Notification updated successfully"
+                )
             else:
                 self.hass.states.async_set(
                     f"sensor.{self.entry_name}_notifications",
@@ -296,14 +295,14 @@ class NotificationHelper:
         """將通知中的 info 類型更改為 success 類型(change alert-type info to success)"""
         try:
             async with self._lock:
-                notifications_dq = self._notifications_dict.get(self.entry_id)[0]
+                notifications_dq = self._notifications_dict[self.entry_id][0]
                 # 如果該通知不為空
                 if notifications_dq:
                     notifications_dq = [
                         notification.replace(
                             'alert-type=\'info\'', 'alert-type=\'success\''
-                        ) if 'alert-type=\'info\'' in notification else notification
-                        for notification in notifications_dq
+                        ) if 'alert-type=\'info\'' in notification else
+                        notification for notification in notifications_dq
                     ]
                     self._notifications_dict[self.entry_id] = [
                         deque(notifications_dq, maxlen=self.limit), 0
@@ -311,22 +310,28 @@ class NotificationHelper:
                     await self.save_notifications_dict()
                     await self.update_notification_log()
                 else:
-                    _LOGGER.warning(f"No valid notifications found for {self.entry_name}")
+                    _LOGGER.warning(
+                        f"No valid notifications found for {self.entry_name}"
+                    )
         except Exception as e:
-            _LOGGER.error(f"Error replacing {self.entry_name} notifications: {e}")
+            _LOGGER.error(
+                f"Error replacing {self.entry_name} notifications: {e}"
+            )
 
     async def clear(self, data):
         """清空通知(clear notifications)"""
         try:
             async with self._lock:
-                notifications_dq = self._notifications_dict.get(self.entry_id)[0]
+                notifications_dq = self._notifications_dict[self.entry_id][0]
                 if notifications_dq:
                     notifications_dq.clear()
                     self._notifications_dict[self.entry_id][1] = 0
                     await self.save_notifications_dict()
                     await self.update_notification_log()
                 else:
-                    _LOGGER.warning(f"No valid notifications found for {self.entry_name}")
+                    _LOGGER.warning(
+                        f"No valid notifications found for {self.entry_name}"
+                    )
 
             if self._ios_devices_id:
                 tasks = [
@@ -339,4 +344,6 @@ class NotificationHelper:
 
             _LOGGER.debug(f"Clear successfully")
         except Exception as e:
-            _LOGGER.error(f"Error clearing {self.entry_name} notifications: {e}")
+            _LOGGER.error(
+                f"Error clearing {self.entry_name} notifications: {e}"
+            )
