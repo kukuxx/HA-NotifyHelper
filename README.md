@@ -41,11 +41,7 @@
 
 ## Changelog
 
-##### V2.4.0
-- <a href='https://github.com/kukuxx/HA-NotifyHelper/releases/tag/2.4.0'>See details here.</a>
-
-##### V2.3.0
-- <a href='https://github.com/kukuxx/HA-NotifyHelper/releases/tag/2.3.0'>See details here.</a>
+> [CHANGELOG](/CHANGELOG.md)
 
 ## Instructions for use  
 
@@ -136,7 +132,7 @@ you can use the first example without adding ios and android.<br>
 - Lovelace card configuration:
 ```
     type: custom:notifications-card
-    entity: sensor.yourname_notifications
+    person_name:  // yourname, e.g.:John
     font_size: optional       // text size, default 16px
     line_height: optional    // line spacing ratio, default 1.0
 

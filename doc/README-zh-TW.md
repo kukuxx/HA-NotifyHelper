@@ -38,11 +38,7 @@
 
 ## 變更日誌
 
-##### V2.4.0
-- <a href='https://github.com/kukuxx/HA-NotifyHelper/releases/tag/2.4.0'>請查看說明。</a>
-
-##### V2.3.0
-- <a href='https://github.com/kukuxx/HA-NotifyHelper/releases/tag/2.3.0'>請查看說明。</a>
+> [CHANGELOG](/CHANGELOG.md)
 
 ## 使用教學
 
@@ -125,7 +121,7 @@
 - Lovelace card 配置:
 ```
     type: custom:notifications-card
-    entity: sensor.yourname_notifications
+    person_name: // 使用者名稱， 例:JHON
     font_size: 可選       // 文字大小，默認16px
     line_height: 可選     // 行間距比例，默認1.0
 

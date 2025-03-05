@@ -1,45 +1,45 @@
+from __future__ import annotations
+
+import os
 import voluptuous as vol
 
 DOMAIN = "notifyhelper"
-SERVICE_DOMAIN = "notify"
+NOTIFY_DOMAIN = "notify"
 SERVICES = ["all_person", "notify_person"]
 CONF_URL = "url"
 CONF_ENTRY_NAME = "entry_name"
 CONF_IOS_DEVICES = "ios_devices"
 CONF_ANDROID_DEVICES = "android_devices"
+NOTIFICATIONS_PATH = "custom_components/notifyhelper/notifications"
 
-ALL_PERSON_SCHEMA = vol.Schema(
-    {
+ALL_PERSON_SCHEMA = vol.Schema({
+    vol.Required("message"): str,
+    vol.Optional("title", default=""): str,
+    vol.Optional("color", default=""): str,
+    vol.Optional("data", default={}): dict,
+})
+
+NOTIFY_PERSON_SCHEMA = vol.All(
+    vol.Schema({
         vol.Required("message"): str,
+        vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
         vol.Optional("title", default=""): str,
         vol.Optional("color", default=""): str,
         vol.Optional("data", default={}): dict,
-    }
-)
-
-NOTIFY_PERSON_SCHEMA = vol.All(
-    vol.Schema(
-        {
-            vol.Required("message"): str,
-            vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
-            vol.Optional("title", default=""): str,
-            vol.Optional("color", default=""): str,
-            vol.Optional("data", default={}): dict,
-        }
-    )
-)
-
-READ_SCHEMA = vol.All(
-    vol.Schema({
-        vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
     })
 )
 
-CLEAR_SCHEMA = vol.All(
-    vol.Schema({
-        vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
-    })
-)
+READ_SCHEMA = vol.All(vol.Schema({
+    vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
+}))
+
+CLEAR_SCHEMA = vol.All(vol.Schema({
+    vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
+}))
+
+TRIGGER_SCHEMA = vol.All(vol.Schema({
+    vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
+}))
 
 ALL_PERSON_DESCRIBE_SCHEMA = {
     "name": "Notify all person",
