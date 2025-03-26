@@ -10,7 +10,14 @@ CONF_URL = "url"
 CONF_ENTRY_NAME = "entry_name"
 CONF_IOS_DEVICES = "ios_devices"
 CONF_ANDROID_DEVICES = "android_devices"
+
 NOTIFICATIONS_PATH = "custom_components/notifyhelper/notifications"
+HELPER_VER = "2.6.0"
+EVENT = "notifyhelper_update"
+
+BASE_URL = "/notify-helper"
+SCRIPT_URL = "/notifications-card.js"
+FRONTEND_URL = BASE_URL + SCRIPT_URL
 
 ALL_PERSON_SCHEMA = vol.Schema({
     vol.Required("message"): str,

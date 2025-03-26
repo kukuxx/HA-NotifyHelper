@@ -11,8 +11,10 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.service import async_set_service_schema
+from homeassistant.components.websocket_api import async_register_command
 
 from .notificationhelper import NotificationHelper
+from .websocket import handle_subscribe_updates
 from .const import (
     DOMAIN, CONF_IOS_DEVICES, CONF_ANDROID_DEVICES, CONF_ENTRY_NAME, CONF_URL, NOTIFY_DOMAIN, ALL_PERSON_SCHEMA,
     NOTIFY_PERSON_SCHEMA, READ_SCHEMA, CLEAR_SCHEMA, TRIGGER_SCHEMA, SERVICE_DESCRIBE_SCHEMA, SERVICES,
@@ -58,6 +60,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
         for service_name in SERVICES:
             async_set_service_schema(hass, NOTIFY_DOMAIN, service_name, SERVICE_DESCRIBE_SCHEMA[service_name])
+
+        async_register_command(
+            hass,
+            handle_subscribe_updates
+        )
 
         return True
     except Exception as e:

@@ -11,8 +11,9 @@ from collections import deque
 from urllib.parse import urlparse
 
 from homeassistant.util.dt import now, as_timestamp
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 
-from .const import DOMAIN, NOTIFICATIONS_PATH
+from .const import DOMAIN, NOTIFICATIONS_PATH, EVENT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ class NotificationHelper:
         self.entry_name = entry_name.split(".")[1]
         self._lock = asyncio.Lock()
         self._notifications_dict: dict[str, list[deque, int]] = {}
+        self._notifications_dq = None
         self._ios_devices_id = ios_devices
         self._android_devices_id = android_devices
         self._url = url
@@ -41,6 +43,8 @@ class NotificationHelper:
                 self._notifications_dict[self.entry_id] = [deque(notifications, maxlen=self.limit), badge]
             else:
                 self._notifications_dict[self.entry_id] = [deque(maxlen=self.limit), 0]
+            
+            self._notifications_dq = self._notifications_dict[self.entry_id][0]
 
             await self.trigger()
 
@@ -118,15 +122,15 @@ class NotificationHelper:
         try:
             async with self._lock:
                 _data = dict(data)
+                if not (title := _data.get("title")):
+                   title = _data["title"] = "Notification"
+                if not (message := _data.get("message")):
+                    message = _data["message"] = "No message"
+                if not (parameters_data := _data.get("data")):
+                    parameters_data = _data["data"] = {}
+
                 _LOGGER.debug(f"{self.entry_name}: {_data}")
-
-                _data.setdefault("title", "Notification")
-                _data.setdefault("message", "No message")
-                parameters_data = _data.setdefault("data", {})
                 badge = self._notifications_dict[self.entry_id][1] + 1
-                message = _data["message"]
-                title = _data["title"]
-
                 tasks = []
 
                 if "android" not in parameters_data and "ios" not in parameters_data:
@@ -182,14 +186,16 @@ class NotificationHelper:
         """將通知中的 info 類型更改為 success 類型(change alert-type info to success)"""
         try:
             async with self._lock:
-                notifications_dq = self._notifications_dict[self.entry_id][0]
                 # 如果該通知不為空
-                if notifications_dq:
-                    notifications_dq = [
-                        notification.replace('alert-type=\'info\'', 'alert-type=\'success\'')
-                        if 'alert-type=\'info\'' in notification else notification for notification in notifications_dq
-                    ]
-                    self._notifications_dict[self.entry_id] = [deque(notifications_dq, maxlen=self.limit), 0]
+                if self._notifications_dq:
+                    self._notifications_dq = self._notifications_dict[self.entry_id][0] = deque(
+                        (notification.replace("alert-type='info'", "alert-type='success'")
+                        if "alert-type='info'" in notification else notification
+                        for notification in self._notifications_dq),
+                        maxlen=self._notifications_dq.maxlen
+                    )
+
+                    self._notifications_dict[self.entry_id][1] = 0
                     await self.save_notifications_dict()
                 else:
                     _LOGGER.warning(f"No valid notifications found for {self.entry_name}")
@@ -200,9 +206,8 @@ class NotificationHelper:
         """清空通知(clear notifications)"""
         try:
             async with self._lock:
-                notifications_dq = self._notifications_dict[self.entry_id][0]
-                if notifications_dq:
-                    notifications_dq.clear()
+                if self._notifications_dq:
+                    self._notifications_dq.clear()
                     self._notifications_dict[self.entry_id][1] = 0
                     await self.save_notifications_dict()
                 else:
@@ -224,12 +229,11 @@ class NotificationHelper:
     async def save_notification(self, data, badge, image, video):
         """保存通知 (save notification)"""
         try:
-            notifications_dq = self._notifications_dict[self.entry_id][0]
             timestamp = as_timestamp(now())
             send_time = now().strftime("%Y-%m-%d %H:%M:%S")
             message = data["message"]
             title = data["title"]
-            color = data.get("color", None)
+            color = data.get("color")
 
             message_html = f"<font color='{color}'>{message}</font>" if color else message
             notification_parts = [
@@ -253,7 +257,7 @@ class NotificationHelper:
 
             notification_parts.append(f"<br><br><b><i>{send_time}</i></b></blockquote>")
             # 添加通知並更新 badge
-            notifications_dq.appendleft("".join(notification_parts))
+            self._notifications_dq.appendleft("".join(notification_parts))
             self._notifications_dict[self.entry_id][1] = badge
 
         except Exception as e:
@@ -273,20 +277,21 @@ class NotificationHelper:
         """觸發通知更新事件(trigger notifications update event)"""
         try:
             async with self._lock:
-                notification_dq = self._notifications_dict[self.entry_id][0]
-
-                if notification_dq:
-                    # notification_str = '\n'.join(notification_dq)
-                    self.hass.bus.async_fire(
-                        f"{DOMAIN}_update", {
+                if self._notifications_dq:
+                    async_dispatcher_send(
+                        self.hass, 
+                        "update",
+                        {
                             "person": str(self.entry_name),
-                            "notifications": list(notification_dq),
+                            "notifications": list(self._notifications_dq),
                         }
                     )
                     _LOGGER.debug(f"{self.entry_name}:Notification updated successfully")
                 else:
-                    self.hass.bus.async_fire(
-                        f"{DOMAIN}_update", {
+                    async_dispatcher_send(
+                        self.hass, 
+                        "update",
+                        {
                             "person": str(self.entry_name),
                             "notifications": [],
                         }
