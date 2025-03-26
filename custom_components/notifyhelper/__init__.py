@@ -15,6 +15,7 @@ from homeassistant.components.websocket_api import async_register_command
 
 from .notificationhelper import NotificationHelper
 from .websocket import handle_subscribe_updates
+from .card import async_setup_frontend, async_del_frontend
 from .const import (
     DOMAIN, CONF_IOS_DEVICES, CONF_ANDROID_DEVICES, CONF_ENTRY_NAME, CONF_URL, NOTIFY_DOMAIN, ALL_PERSON_SCHEMA,
     NOTIFY_PERSON_SCHEMA, READ_SCHEMA, CLEAR_SCHEMA, TRIGGER_SCHEMA, SERVICE_DESCRIBE_SCHEMA, SERVICES,
@@ -60,6 +61,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
         for service_name in SERVICES:
             async_set_service_schema(hass, NOTIFY_DOMAIN, service_name, SERVICE_DESCRIBE_SCHEMA[service_name])
+
+        await async_setup_frontend(hass)
 
         async_register_command(
             hass,
@@ -131,6 +134,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.debug(f"Removed file: {entry.entry_id}.pkl")
 
     if DOMAIN in hass.data and not hass.data[DOMAIN]:
+        await async_del_frontend(hass)
         hass.services.async_remove(NOTIFY_DOMAIN, "all_person")
         hass.services.async_remove(NOTIFY_DOMAIN, "notify_person")
         hass.services.async_remove(DOMAIN, "read")

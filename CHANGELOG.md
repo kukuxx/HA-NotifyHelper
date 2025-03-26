@@ -1,3 +1,6 @@
+## V2.6.0
+- **Integration of notifications-card**
+- **Fix websocket user permission issue [#8](https://github.com/kukuxx/HA-NotifyHelper/issues/8)**
 ## V2.5.0
 
 - **Fix HA recorder warning messages.**
