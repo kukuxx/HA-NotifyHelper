@@ -11,14 +11,13 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.service import async_set_service_schema
-from homeassistant.components.websocket_api import async_register_command
 
 from .notificationhelper import NotificationHelper
-from .websocket import handle_subscribe_updates
+from .websocket import register_ws
 from .card import async_setup_frontend, async_del_frontend
 from .const import (
     DOMAIN, CONF_IOS_DEVICES, CONF_ANDROID_DEVICES, CONF_ENTRY_NAME, CONF_URL, NOTIFY_DOMAIN, ALL_PERSON_SCHEMA,
-    NOTIFY_PERSON_SCHEMA, READ_SCHEMA, CLEAR_SCHEMA, TRIGGER_SCHEMA, SERVICE_DESCRIBE_SCHEMA, SERVICES,
+    NOTIFY_PERSON_SCHEMA, READ_SCHEMA, CLEAR_SCHEMA, SERVICE_DESCRIBE_SCHEMA, SERVICES,
     NOTIFICATIONS_PATH
 )
 
@@ -49,25 +48,15 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             """Service that clear notifications to specific entries."""
             await notification_clear(hass, call)
 
-        async def service_trigger(call: ServiceCall):
-            """Service that get notifications to specific entries."""
-            await notification_trigger(hass, call)
-
         hass.services.async_register(NOTIFY_DOMAIN, "all_person", service_notify_all, schema=ALL_PERSON_SCHEMA)
         hass.services.async_register(NOTIFY_DOMAIN, "notify_person", service_notify, schema=NOTIFY_PERSON_SCHEMA)
         hass.services.async_register(DOMAIN, "read", service_read, schema=READ_SCHEMA)
         hass.services.async_register(DOMAIN, "clear", service_clear, schema=CLEAR_SCHEMA)
-        hass.services.async_register(DOMAIN, "trigger", service_trigger, schema=TRIGGER_SCHEMA)
 
         for service_name in SERVICES:
             async_set_service_schema(hass, NOTIFY_DOMAIN, service_name, SERVICE_DESCRIBE_SCHEMA[service_name])
 
         await async_setup_frontend(hass)
-
-        async_register_command(
-            hass,
-            handle_subscribe_updates
-        )
 
         return True
     except Exception as e:
@@ -87,9 +76,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         helper = NotificationHelper(hass, entry_id, entry_name, ios_devices, android_devices, url)
         hass.data.setdefault(DOMAIN, {})[entry_id] = [helper, entry_name]
-        await helper.start()
 
         entry.async_on_unload(entry.add_update_listener(update_listener))
+
+        await register_ws(hass, helper, entry_name.split(".")[1])
+        await helper.start()
 
         return True
     except Exception as e:
@@ -139,7 +130,6 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         hass.services.async_remove(NOTIFY_DOMAIN, "notify_person")
         hass.services.async_remove(DOMAIN, "read")
         hass.services.async_remove(DOMAIN, "clear")
-        hass.services.async_remove(DOMAIN, "trigger")
         hass.data.pop(DOMAIN)
 
 
@@ -258,32 +248,6 @@ async def notification_clear(hass, call):
     else:
         tasks = [
             hass.async_create_task(helper.clear())
-            for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
-            if entry_name in targets
-        ]
-        await asyncio.gather(*tasks)
-
-
-async def notification_trigger(hass, call):
-    """Trigger notification to entry"""
-    if not hass.data.get(DOMAIN):
-        _LOGGER.warning("No entries available for NotifyHelper to get notifications.")
-        return
-    else:
-        _LOGGER.debug(f"Input data: {call.data}")
-
-    targets = call.data.get("targets", [])
-    if not targets:
-        _LOGGER.debug(f"{targets}")
-        _LOGGER.error(f"Please specify at least one target")
-        return
-    elif not isinstance(targets, list):
-        _LOGGER.debug(f"{targets}")
-        _LOGGER.error("Targets must be a list in YAML format.")
-        return
-    else:
-        tasks = [
-            hass.async_create_task(helper.trigger())
             for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
             if entry_name in targets
         ]

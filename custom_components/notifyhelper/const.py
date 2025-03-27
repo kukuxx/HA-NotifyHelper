@@ -12,8 +12,8 @@ CONF_IOS_DEVICES = "ios_devices"
 CONF_ANDROID_DEVICES = "android_devices"
 
 NOTIFICATIONS_PATH = "custom_components/notifyhelper/notifications"
-HELPER_VER = "2.6.0"
-EVENT = "notifyhelper_update"
+HELPER_VER = "2.6.1"
+UPDATE_EVENT = "update"
 
 BASE_URL = "/notify-helper"
 SCRIPT_URL = "/notifications-card.js"
@@ -41,10 +41,6 @@ READ_SCHEMA = vol.All(vol.Schema({
 }))
 
 CLEAR_SCHEMA = vol.All(vol.Schema({
-    vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
-}))
-
-TRIGGER_SCHEMA = vol.All(vol.Schema({
     vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
 }))
 

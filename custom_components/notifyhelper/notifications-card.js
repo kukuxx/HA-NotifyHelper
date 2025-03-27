@@ -53,9 +53,6 @@ class NotificationCard extends HTMLElement {
     if (this._isFirstRender) {
       this._render(hass, this.previousNotifications);
       this._subscribeToEvents(hass);
-      hass.callService("notifyhelper", "trigger", {
-        targets: [`person.${this.config.person_name}`],
-      });
       this._isFirstRender = false;
     }
 
@@ -71,24 +68,27 @@ class NotificationCard extends HTMLElement {
   _subscribeToEvents(hass) {
     try {
       this.unsubscribe = hass.connection.subscribeMessage((event) => {
-        // console.log("收到事件:", event);
 
-        if (event.person.includes(this.config.person_name)) {
+        // console.log("收到事件:", event);
+        if (event.event_type === "update" &&
+          event.person.includes(this.config.person_name)) {
 
           const newNotifications = event.notifications || [];
-
           // 只有當通知變更時才重新渲染
           if (this._notificationsChanged(newNotifications)) {
             this._render(hass, newNotifications);
             this.previousNotifications = [...newNotifications];
-            localStorage.setItem(`savedNotifications_${this.config.person_name}`, JSON.stringify(this.previousNotifications));
+            localStorage.setItem(
+              `savedNotifications_${this.config.person_name}`,
+              JSON.stringify(this.previousNotifications)
+            );
           }
         }
-      }, { type: "notifyhelper_update" });
+      }, { type: `notifyhelper/${this.config.person_name}` });
 
       this._eventSubscription = this.unsubscribe;
     } catch (error) {
-      console.error("Failed to subscribe to events:", error);
+      console.error("Unexpected error in subscription:", error);
       this._eventSubscription = null;
     }
   }

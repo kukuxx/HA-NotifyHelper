@@ -4,11 +4,15 @@
     ],
     "domain": "notifyhelper",
     "name": "Notify Helper",
-    "version": "2.6.0",
+    "version": "2.6.1",
+    "homeassistant": "2025.2.0",
     "documentation": "https://github.com/kukuxx/HA-NotifyHelper/blob/main/README.md",
     "issue_tracker": "https://github.com/kukuxx/HA-NotifyHelper/issues",
     "requirements": [],
     "dependencies": [],
+    "loggers": [
+        "notifyhelper"
+    ],
     "config_flow": true,
     "iot_class": "local_polling"
 }

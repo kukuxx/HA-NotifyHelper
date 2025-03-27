@@ -1,30 +1,36 @@
+## V2.6.1
+- **Modify websocket registration method**
+- **Remove the trigger service**
+
+
 ## V2.6.0
 - **Integration of notifications-card**
 - **Fix websocket user permission issue [#8](https://github.com/kukuxx/HA-NotifyHelper/issues/8)**
-## V2.5.0
 
+
+## V2.5.0
 - **Fix HA recorder warning messages.**
 - **Remove the sensor and modify the method for displaying notifications on the dashboard.**
 
-## V2.4.1
 
+## V2.4.1
 - **Fix the incorrect format of video and image label.**
 - **Optimize the logic for sending and saving notifications.**
 
-## V2.4.0
 
+## V2.4.0
 - **Add notification clearing action `notifyhelper.clear`**
 - **Config Flow now supports setting the default URL for notifications**
 - **Config Flow now supports Chinese**
 - **The DOMAIN for the read action has been changed back to notifyhelper `notifyhelper.read`**
 
-## V2.3.1
 
+## V2.3.1
 - **Fix HA 2024.12 options flow has deprecated self.config**
 - **Change from Markdown card to customized lovelace card**
 
-## V2.3.0
 
+## V2.3.0
 - **Modify notification sending method**
 - **Added compatibility for Android devices**
 

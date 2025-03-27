@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 from homeassistant.util.dt import now, as_timestamp
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 
-from .const import DOMAIN, NOTIFICATIONS_PATH, EVENT
+from .const import DOMAIN, NOTIFICATIONS_PATH, UPDATE_EVENT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -280,8 +280,9 @@ class NotificationHelper:
                 if self._notifications_dq:
                     async_dispatcher_send(
                         self.hass, 
-                        "update",
+                        f"{UPDATE_EVENT}_{self.entry_name}",
                         {
+                            "event_type": UPDATE_EVENT,
                             "person": str(self.entry_name),
                             "notifications": list(self._notifications_dq),
                         }
@@ -290,8 +291,9 @@ class NotificationHelper:
                 else:
                     async_dispatcher_send(
                         self.hass, 
-                        "update",
+                        f"{UPDATE_EVENT}_{self.entry_name}",
                         {
+                            "event_type": UPDATE_EVENT,
                             "person": str(self.entry_name),
                             "notifications": [],
                         }
