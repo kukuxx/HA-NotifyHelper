@@ -51,7 +51,7 @@
 ![image](/doc/settings.png)
 
 > [!Tip]
-> 通知只能保存<b>100</b>則超過會從<b>最舊的開始刪除</b>。
+> 通知只能保存<b>500</b>則超過會從<b>最舊的開始刪除</b>。
 
 - call service的方法和內建的notify.mobile_app服務類似，以下是一個自動化範例:
 ```
@@ -118,7 +118,7 @@
 > <b>如果設置的參數都是通用的可以使用第一個範例不需要加上ios和android。<br>
 > 你可以針對ios和android傳送不同照片或影片但是通知只會保存其中一個，這點請注意。</b>
 
-- Lovelace card 配置:
+- Notifications card 配置:
 ```
     type: custom:notifications-card
     person_name: // 使用者名稱， 例:JHON
@@ -126,8 +126,6 @@
     line_height: 可選     // 行間距比例，默認1.0
 
 ```
-> [!Important]
-> 2.3.1版本開始請搭配 <a href='https://github.com/kukuxx/lovelace-notifications-card'>notifications-card</a> 使用。
 
 - Button card 配置:
 ```
@@ -141,7 +139,6 @@
         data:
             targets:
                 - person.you
-    entity: input_button.read
 ```
 > [!Tip]
 > <b>targets: <i>必須為列表型式。</i></b>

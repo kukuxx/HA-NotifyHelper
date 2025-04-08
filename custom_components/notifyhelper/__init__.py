@@ -12,13 +12,15 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.service import async_set_service_schema
 
-from .notificationhelper import NotificationHelper
+from .helper import NotificationHelper
 from .websocket import register_ws
 from .card import async_setup_frontend, async_del_frontend
 from .const import (
-    DOMAIN, CONF_IOS_DEVICES, CONF_ANDROID_DEVICES, CONF_ENTRY_NAME, CONF_URL, NOTIFY_DOMAIN, ALL_PERSON_SCHEMA,
-    NOTIFY_PERSON_SCHEMA, READ_SCHEMA, CLEAR_SCHEMA, SERVICE_DESCRIBE_SCHEMA, SERVICES,
-    NOTIFICATIONS_PATH
+    DOMAIN, CONF_IOS_DEVICES, CONF_ANDROID_DEVICES, 
+    CONF_ENTRY_NAME, CONF_URL, NOTIFY_DOMAIN, 
+    ALL_PERSON_SCHEMA, NOTIFY_PERSON_SCHEMA, READ_SCHEMA, 
+    CLEAR_SCHEMA, ALL_PERSON_DESCRIBE, NOTIFY_PERSON_DESCRIBE,
+    DATA_PATH, SERVICES_LIST, HELPER, PERSON
 )
 
 CONFIG_SCHEMA = cv.removed(DOMAIN, raise_if_present=True)  # YAML 配置已棄用
@@ -29,32 +31,24 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up global services for NotifyHelper."""
     try:
-        dir_path = os.path.join(hass.config.config_dir, NOTIFICATIONS_PATH)
-        os.makedirs(dir_path, exist_ok=True)
+        os.makedirs(os.path.join(hass.config.config_dir, DATA_PATH), exist_ok=True)
 
-        async def service_notify_all(call: ServiceCall):
-            """Service that send notification to all entries."""
-            await notify_all(hass, call)
+        def make_service_handler(handler_func):
+            async def wrapper(call: ServiceCall):
+                await handler_func(hass, call)
+            return wrapper
 
-        async def service_notify(call: ServiceCall):
-            """Service that send notifications to specific entries."""
-            await notify(hass, call)
+        services = [
+            (NOTIFY_DOMAIN, "all_person", notify_all, ALL_PERSON_SCHEMA, ALL_PERSON_DESCRIBE),
+            (NOTIFY_DOMAIN, "notify_person", notify, NOTIFY_PERSON_SCHEMA, NOTIFY_PERSON_DESCRIBE),
+            (DOMAIN, "read", notification_read, READ_SCHEMA, None),
+            (DOMAIN, "clear", notification_clear, CLEAR_SCHEMA, None),
+        ]
 
-        async def service_read(call: ServiceCall):
-            """Service that read notifications to specific entries."""
-            await notification_read(hass, call)
-
-        async def service_clear(call: ServiceCall):
-            """Service that clear notifications to specific entries."""
-            await notification_clear(hass, call)
-
-        hass.services.async_register(NOTIFY_DOMAIN, "all_person", service_notify_all, schema=ALL_PERSON_SCHEMA)
-        hass.services.async_register(NOTIFY_DOMAIN, "notify_person", service_notify, schema=NOTIFY_PERSON_SCHEMA)
-        hass.services.async_register(DOMAIN, "read", service_read, schema=READ_SCHEMA)
-        hass.services.async_register(DOMAIN, "clear", service_clear, schema=CLEAR_SCHEMA)
-
-        for service_name in SERVICES:
-            async_set_service_schema(hass, NOTIFY_DOMAIN, service_name, SERVICE_DESCRIBE_SCHEMA[service_name])
+        for domain, name, func, schema, describe in services:
+            hass.services.async_register(domain, name, make_service_handler(func), schema=schema)
+            if describe:
+                async_set_service_schema(hass, domain, name, describe)
 
         await async_setup_frontend(hass)
 
@@ -75,12 +69,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry_id = entry.entry_id
 
         helper = NotificationHelper(hass, entry_id, entry_name, ios_devices, android_devices, url)
-        hass.data.setdefault(DOMAIN, {})[entry_id] = [helper, entry_name]
+        hass.data.setdefault(DOMAIN, {})[entry_id] = {
+            HELPER: helper,
+            PERSON: entry_name,
+        }
 
         entry.async_on_unload(entry.add_update_listener(update_listener))
 
         await register_ws(hass, helper, entry_name.split(".")[1])
-        await helper.start()
+        await helper.async_start()
 
         return True
     except Exception as e:
@@ -114,7 +111,7 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle removal of an entry."""
-    dir_path = os.path.join(hass.config.config_dir, NOTIFICATIONS_PATH)
+    dir_path = os.path.join(hass.config.config_dir, DATA_PATH)
     json_path = f"{dir_path}/{entry.entry_id}.json"
     pkl_path = f"{dir_path}/{entry.entry_id}.pkl"
     if os.path.exists(json_path):
@@ -126,10 +123,10 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     if DOMAIN in hass.data and not hass.data[DOMAIN]:
         await async_del_frontend(hass)
-        hass.services.async_remove(NOTIFY_DOMAIN, "all_person")
-        hass.services.async_remove(NOTIFY_DOMAIN, "notify_person")
-        hass.services.async_remove(DOMAIN, "read")
-        hass.services.async_remove(DOMAIN, "clear")
+
+        for service_domain, service_name in SERVICES_LIST:
+            hass.services.async_remove(service_domain, service_name)
+           
         hass.data.pop(DOMAIN)
 
 
@@ -162,8 +159,8 @@ async def notify_all(hass, call):
         _LOGGER.debug(f"Input data: {call.data}")
 
     tasks = [
-        hass.async_create_task(helper.send_notification(deepcopy(call.data)))
-        for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
+        v[HELPER].async_send(deepcopy(call.data))
+        for v in hass.data[DOMAIN].values()
     ]
     await asyncio.gather(*tasks)
 
@@ -188,15 +185,15 @@ async def notify(hass, call):
     else:
         if len(targets) > 1:
             tasks = [
-                hass.async_create_task(helper.send_notification(deepcopy(call.data)))
-                for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
-                if entry_name in targets
+                v[HELPER].async_send(deepcopy(call.data))
+                for v in hass.data[DOMAIN].values()
+                if v[PERSON] in targets
             ]
         else:
             tasks = [
-                hass.async_create_task(helper.send_notification(call.data))
-                for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
-                if entry_name in targets
+                v[HELPER].async_send(call.data)
+                for v in hass.data[DOMAIN].values()
+                if v[PERSON] in targets
             ]
 
         await asyncio.gather(*tasks)
@@ -221,9 +218,9 @@ async def notification_read(hass, call):
         return
     else:
         tasks = [
-            hass.async_create_task(helper.read())
-            for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
-            if entry_name in targets
+            v[HELPER].async_read()
+            for v in hass.data[DOMAIN].values()
+            if v[PERSON] in targets
         ]
         await asyncio.gather(*tasks)
 
@@ -247,8 +244,8 @@ async def notification_clear(hass, call):
         return
     else:
         tasks = [
-            hass.async_create_task(helper.clear())
-            for entry_id, (helper, entry_name) in hass.data[DOMAIN].items()
-            if entry_name in targets
+            v[HELPER].async_clear()
+            for v in hass.data[DOMAIN].values()
+            if v[PERSON] in targets
         ]
         await asyncio.gather(*tasks)

@@ -1,0 +1,26 @@
+<ha-alert alert-type='info'><strong>{{ title }}</strong></ha-alert>
+<blockquote>
+    {%- if color -%}
+    <font color="{{ color }}">{{ message }}</font>
+    {%- else -%}
+    {{ message }}
+    {%- endif -%}
+
+    {%- if image -%}
+    <br>
+    <br>
+    <img src="{{ image }}{{ '?timestamp=' ~ timestamp if not image_is_url else '' }}" />
+    {%- endif -%}
+
+    {%- if video -%}
+    <br>
+    <br>
+    <video controls preload="metadata">
+        <source src="{{ video }}{{ '?timestamp=' ~ timestamp if not video_is_url else '' }}"
+            type="video/{{ video_type }}">
+    </video>
+    {%- endif -%}
+    <br>
+    <br>
+    <b><i>{{ send_time }}</i></b>
+</blockquote>

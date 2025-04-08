@@ -55,8 +55,8 @@
 ![image](/doc/settings.png)
 
 > [!Tip]
-> Only <b>100</b> notifications can be saved.<br>
-> If more than <b>100</b> notifications are stored,
+> Only <b>500</b> notifications can be saved.<br>
+> If more than <b>500</b> notifications are stored,
 > <br>they will be <b>deleted</b> starting from the <b>oldest one</b>.
 
 - The method of calling the service is similar to the built-in notify.mobile_app service.
@@ -129,7 +129,7 @@
 you can use the first example without adding ios and android.<br>
 > You can send different photos or videos for ios and android but the notification will only save one of them, please be aware of this. </b>
 
-- Lovelace card configuration:
+- Notifications card configuration:
 ```
     type: custom:notifications-card
     person_name:  // yourname, e.g.:John
@@ -137,8 +137,6 @@ you can use the first example without adding ios and android.<br>
     line_height: optional    // line spacing ratio, default 1.0
 
 ```
-> [!Important]
-> Starting from version 2.3.1, please use it with <a href='https://github.com/kukuxx/lovelace-notifications-card'>notifications-card</a>.
 
 - Button card configuration:
 ```
@@ -152,7 +150,6 @@ you can use the first example without adding ios and android.<br>
         data:
             targets:
                 - person.you
-    entity: input_button.read
 ```
 > [!Tip]
 > <b>targets: <i>must be a list.</i></b>

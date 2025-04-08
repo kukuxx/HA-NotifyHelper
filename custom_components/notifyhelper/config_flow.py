@@ -2,6 +2,8 @@ import logging
 
 import voluptuous as vol
 
+from itertools import chain
+
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
@@ -39,12 +41,12 @@ class NotifyHelperConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         current_entries = self._async_current_entries()
-        entry_names = [entry.data.get(CONF_ENTRY_NAME) for entry in current_entries]
-        devices = [
-            device for entry in current_entries
-            for device in entry.data.get(CONF_IOS_DEVICES, []) +
-            entry.data.get(CONF_ANDROID_DEVICES, [])
-        ]
+        entry_names = {entry.data.get(CONF_ENTRY_NAME) for entry in current_entries}
+        devices = set(chain.from_iterable(
+            entry.data.get(CONF_IOS_DEVICES, []) + entry.data.get(CONF_ANDROID_DEVICES, [])
+            for entry in current_entries
+        ))
+
 
         if user_input is not None:
             # 驗證名稱是否已存在
@@ -53,16 +55,14 @@ class NotifyHelperConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             else:
                 input_ios = user_input.get(CONF_IOS_DEVICES, [])
                 input_android = user_input.get(CONF_ANDROID_DEVICES, [])
-                input_devices = input_ios + input_android
                 # 驗證是否至少選擇一個設備和設備是否重複
-                if not input_ios and not input_android:
+                if not (input_devices := set(input_ios + input_android)):
                     errors["base"] = "no_device"
-                elif input_ios in input_android or input_android in input_ios:
+                elif len(input_devices) != len(input_ios + input_android):
                     errors["base"] = "devices_conflict"
-                elif input_devices in devices:
+                elif input_devices & devices:
                     errors["base"] = "devices_conflict"
-                elif user_input.get(CONF_URL, "") and user_input.get(CONF_URL,
-                                                                     "").startswith('/'):
+                elif (input_url := user_input.get(CONF_URL)) and not input_url.startswith('/'):
                     errors["base"] = "url_error"
                 else:
                     # 保存配置
@@ -111,12 +111,11 @@ class NotifyHelperOptionsFlow(config_entries.OptionsFlow):
             entry for entry in self.hass.config_entries.async_entries(DOMAIN)
             if entry.entry_id != self._config_entry_id
         ]
-        entry_names = [entry.data.get(CONF_ENTRY_NAME) for entry in existing_entries]
-        devices = [
-            device for entry in existing_entries
-            for device in entry.data.get(CONF_IOS_DEVICES, []) +
-            entry.data.get(CONF_ANDROID_DEVICES, [])
-        ]
+        entry_names = {entry.data.get(CONF_ENTRY_NAME) for entry in existing_entries}
+        devices = set(chain.from_iterable(
+            entry.data.get(CONF_IOS_DEVICES, []) + entry.data.get(CONF_ANDROID_DEVICES, [])
+            for entry in existing_entries
+        ))
 
         if user_input is not None:
             # 驗證名稱是否已存在
@@ -125,16 +124,14 @@ class NotifyHelperOptionsFlow(config_entries.OptionsFlow):
             else:
                 input_ios = user_input.get(CONF_IOS_DEVICES, [])
                 input_android = user_input.get(CONF_ANDROID_DEVICES, [])
-                input_devices = input_ios + input_android
                 # 驗證是否至少選擇一個設備和設備是否重複
-                if not input_ios and not input_android:
+                if not (input_devices := set(input_ios + input_android)):
                     errors["base"] = "no_device"
-                elif input_ios in input_android or input_android in input_ios:
+                elif len(input_devices) != len(input_ios + input_android):
                     errors["base"] = "devices_conflict"
-                elif input_devices in devices:
+                elif input_devices & devices:
                     errors["base"] = "devices_conflict"
-                elif user_input.get(CONF_URL, "") and user_input.get(CONF_URL,
-                                                                     "").startswith('/'):
+                elif (input_url := user_input.get(CONF_URL)) and not input_url.startswith('/'):
                     errors["base"] = "url_error"
                 else:
                     # 更新選項

@@ -38,7 +38,7 @@ async def register_ws(hass, helper, name):
         unsubscribe = async_dispatcher_connect(hass, f"{UPDATE_EVENT}_{name}", handle_notifications_update)
         connection.subscriptions[msg["id"]] = unsubscribe
         connection.send_result(msg["id"])
-        await helper.trigger()
+        await helper.async_trigger()
 
     async_register_command(
         hass,

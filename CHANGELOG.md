@@ -1,3 +1,7 @@
+## V2.6.2
+- **Refactoring code to improve stability**
+
+
 ## V2.6.1
 - **Modify websocket registration method**
 - **Remove the trigger service**

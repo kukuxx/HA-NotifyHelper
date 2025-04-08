@@ -5,15 +5,22 @@ import voluptuous as vol
 
 DOMAIN = "notifyhelper"
 NOTIFY_DOMAIN = "notify"
-SERVICES = ["all_person", "notify_person"]
 CONF_URL = "url"
 CONF_ENTRY_NAME = "entry_name"
 CONF_IOS_DEVICES = "ios_devices"
 CONF_ANDROID_DEVICES = "android_devices"
 
-NOTIFICATIONS_PATH = "custom_components/notifyhelper/notifications"
-HELPER_VER = "2.6.1"
+SERVICES_LIST = [
+    (NOTIFY_DOMAIN, "all_person"),
+    (NOTIFY_DOMAIN, "notify_person"),
+    (DOMAIN, "read"),
+    (DOMAIN, "clear"),
+]
+DATA_PATH = "custom_components/notifyhelper"
+HELPER_VER = "2.6.2"
 UPDATE_EVENT = "update"
+HELPER = "helper"
+PERSON = "person"
 
 BASE_URL = "/notify-helper"
 SCRIPT_URL = "/notifications-card.js"
@@ -44,7 +51,7 @@ CLEAR_SCHEMA = vol.All(vol.Schema({
     vol.Required("targets"): [vol.Match(r"^person\.\w+$")],
 }))
 
-ALL_PERSON_DESCRIBE_SCHEMA = {
+ALL_PERSON_DESCRIBE = {
     "name": "Notify all person",
     "description": "Notify all person",
     "fields": {
@@ -85,7 +92,7 @@ ALL_PERSON_DESCRIBE_SCHEMA = {
     },
 }
 
-NOTIFY_PERSON_DESCRIBE_SCHEMA = {
+NOTIFY_PERSON_DESCRIBE = {
     "name": "Notify designated person",
     "description": "Notify designated person",
     "fields": {
@@ -158,8 +165,3 @@ NOTIFY_PERSON_DESCRIBE_SCHEMA = {
 #         },
 #     }
 # }
-
-SERVICE_DESCRIBE_SCHEMA = {
-    "all_person": ALL_PERSON_DESCRIBE_SCHEMA,
-    "notify_person": NOTIFY_PERSON_DESCRIBE_SCHEMA,
-}
