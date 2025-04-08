@@ -51,7 +51,7 @@
 ![image](/doc/settings.png)
 
 > [!Tip]
-> 通知只能保存<b>100</b>則超過會從<b>最舊的開始刪除</b>。
+> 通知只能保存<b>500</b>則超過會從<b>最舊的開始刪除</b>。
 
 - call service的方法和內建的notify.mobile_app服務類似，以下是一個自動化範例:
 ```

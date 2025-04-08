@@ -55,8 +55,8 @@
 ![image](/doc/settings.png)
 
 > [!Tip]
-> Only <b>100</b> notifications can be saved.<br>
-> If more than <b>100</b> notifications are stored,
+> Only <b>500</b> notifications can be saved.<br>
+> If more than <b>500</b> notifications are stored,
 > <br>they will be <b>deleted</b> starting from the <b>oldest one</b>.
 
 - The method of calling the service is similar to the built-in notify.mobile_app service.
