@@ -1,3 +1,7 @@
+## V2.6.3
+- **Fix startup initialization error**
+
+
 ## V2.6.2
 - **Refactoring code to improve stability**
 

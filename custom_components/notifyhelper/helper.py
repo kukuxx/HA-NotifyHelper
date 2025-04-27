@@ -32,6 +32,7 @@ class NotificationHelper:
         self._notifidata = None
         self._template = None
         self._lock = asyncio.Lock()
+        self._started = asyncio.Event()
 
     async def async_start(self):
         """檢查是否有舊資料並建立dataclass(Check if there are old data and build a dataclass)"""
@@ -52,9 +53,8 @@ class NotificationHelper:
             old_data = await self.async_load_notifidata()
             if old_data:
                 self._notifidata.from_dict(old_data)
-                await self.async_trigger(old_data["msg"])
-            else:
-                await self.async_trigger([])  
+
+            self._started.set() 
 
         except Exception as e:
             _LOGGER.error(f"Initialization {self.entry_name} data Error: {e}")
@@ -258,6 +258,7 @@ class NotificationHelper:
     async def async_trigger(self, msg=None):
         """觸發通知更新事件(trigger notifications update event)"""
         try:
+            await asyncio.wait_for(self._started.wait(), timeout=5)
             async_dispatcher_send(
                 self.hass, 
                 f"{UPDATE_EVENT}_{self.entry_name}",
@@ -268,5 +269,7 @@ class NotificationHelper:
                 }
             )
             _LOGGER.debug(f"{self.entry_name} Notification updated successfully: {msg}")
+        except asyncio.TimeoutError:
+            _LOGGER.error(f"Update {self.entry_name} notifications Error: {e}")
         except Exception as e:
             _LOGGER.error(f"Update {self.entry_name} notifications Error: {e}")

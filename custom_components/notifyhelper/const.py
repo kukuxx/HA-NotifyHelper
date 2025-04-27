@@ -17,7 +17,7 @@ SERVICES_LIST = [
     (DOMAIN, "clear"),
 ]
 DATA_PATH = "custom_components/notifyhelper"
-HELPER_VER = "2.6.2"
+HELPER_VER = "2.6.3"
 UPDATE_EVENT = "update"
 HELPER = "helper"
 PERSON = "person"
