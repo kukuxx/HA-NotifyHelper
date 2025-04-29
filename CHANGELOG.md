@@ -1,3 +1,7 @@
+## V2.6.4
+- **Fix notification record method** 
+
+
 ## V2.6.3
 - **Fix startup initialization error**
 

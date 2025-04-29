@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.service import async_set_service_schema
+from homeassistant.helpers.storage import Store
 
 from .helper import NotificationHelper
 from .websocket import register_ws
@@ -20,7 +21,7 @@ from .const import (
     CONF_ENTRY_NAME, CONF_URL, NOTIFY_DOMAIN, 
     ALL_PERSON_SCHEMA, NOTIFY_PERSON_SCHEMA, READ_SCHEMA, 
     CLEAR_SCHEMA, ALL_PERSON_DESCRIBE, NOTIFY_PERSON_DESCRIBE,
-    DATA_PATH, SERVICES_LIST, HELPER, PERSON
+    STORAGE, SERVICES_LIST, HELPER, PERSON
 )
 
 CONFIG_SCHEMA = cv.removed(DOMAIN, raise_if_present=True)  # YAML 配置已棄用
@@ -31,8 +32,6 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up global services for NotifyHelper."""
     try:
-        os.makedirs(os.path.join(hass.config.config_dir, DATA_PATH), exist_ok=True)
-
         def make_service_handler(handler_func):
             async def wrapper(call: ServiceCall):
                 await handler_func(hass, call)
@@ -68,10 +67,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         url = entry.data.get(CONF_URL, None)
         entry_id = entry.entry_id
 
-        helper = NotificationHelper(hass, entry_id, entry_name, ios_devices, android_devices, url)
+        storage = Store(hass, 1, f"{DOMAIN}/{entry.entry_id}.json")
+        helper = NotificationHelper(hass, entry_id, entry_name, ios_devices, 
+                                    android_devices, url, storage)
+        
         hass.data.setdefault(DOMAIN, {})[entry_id] = {
             HELPER: helper,
             PERSON: entry_name,
+            STORAGE: storage,
         }
 
         entry.async_on_unload(entry.add_update_listener(update_listener))
@@ -111,15 +114,9 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle removal of an entry."""
-    dir_path = os.path.join(hass.config.config_dir, DATA_PATH)
-    json_path = f"{dir_path}/{entry.entry_id}.json"
-    pkl_path = f"{dir_path}/{entry.entry_id}.pkl"
-    if os.path.exists(json_path):
-        os.remove(json_path)
-        _LOGGER.debug(f"Removed file: {entry.entry_id}.json")
-    if os.path.exists(pkl_path):
-        os.remove(pkl_path)
-        _LOGGER.debug(f"Removed file: {entry.entry_id}.pkl")
+    store = hass.data[DOMAIN][entry.entry_id][STORAGE]
+    await store.async_remove() 
+    _LOGGER.debug(f"Removed file: {entry.entry_id}.json")
 
     if DOMAIN in hass.data and not hass.data[DOMAIN]:
         await async_del_frontend(hass)

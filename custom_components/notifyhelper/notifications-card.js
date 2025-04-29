@@ -193,10 +193,8 @@ class NotificationCard extends HTMLElement {
   }
 
   _processContent(content) {
-    // 處理換行符
-    const processed = String(content).replace(/(?<![>])\n(?![<])/g, '<br>');
     const temp = document.createElement('div');
-    temp.innerHTML = processed;
+    temp.innerHTML = content;
 
     // 驗證訊息
     this._sanitizeContent(temp);

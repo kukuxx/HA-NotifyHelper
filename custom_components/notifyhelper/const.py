@@ -17,10 +17,11 @@ SERVICES_LIST = [
     (DOMAIN, "clear"),
 ]
 DATA_PATH = "custom_components/notifyhelper"
-HELPER_VER = "2.6.3"
+HELPER_VER = "2.6.4"
 UPDATE_EVENT = "update"
 HELPER = "helper"
 PERSON = "person"
+STORAGE = "storage"
 
 BASE_URL = "/notify-helper"
 SCRIPT_URL = "/notifications-card.js"

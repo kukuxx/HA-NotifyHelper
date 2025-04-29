@@ -4,12 +4,11 @@
     ],
     "domain": "notifyhelper",
     "name": "Notify Helper",
-    "version": "2.6.3",
+    "version": "2.6.4",
     "homeassistant": "2025.2.0",
     "documentation": "https://github.com/kukuxx/HA-NotifyHelper/blob/main/README.md",
     "issue_tracker": "https://github.com/kukuxx/HA-NotifyHelper/issues",
     "requirements": [
-        "orjson",
         "jinja2"
     ],
     "dependencies": [],

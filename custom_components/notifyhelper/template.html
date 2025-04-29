@@ -1,9 +1,9 @@
 <ha-alert alert-type='info'><strong>{{ title }}</strong></ha-alert>
 <blockquote>
     {%- if color -%}
-    <font color="{{ color }}">{{ message }}</font>
+    <font color="{{ color }}">{{ message.replace('\\n', '<br>') | safe }}</font>
     {%- else -%}
-    {{ message }}
+    {{ message.replace('\\n', '<br>') | safe }}
     {%- endif -%}
 
     {%- if image -%}

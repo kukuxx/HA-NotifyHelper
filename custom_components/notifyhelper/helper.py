@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import orjson
 
 from urllib.parse import urlparse
 from jinja2 import Environment, FileSystemLoader
@@ -19,7 +18,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class NotificationHelper:
 
-    def __init__(self, hass, entry_id, entry_name, ios_devices, android_devices, url):
+    def __init__(self, hass, entry_id, entry_name, ios_devices, android_devices, url, storage):
         self.hass = hass
         self.entry_id = entry_id
         self.entry_name = entry_name.split(".")[1]
@@ -27,79 +26,35 @@ class NotificationHelper:
         self._android_devices_id = android_devices
         self._url = url
         self.limit = 500
-        self._dirpath = None
-        self._default_file = None
         self._notifidata = None
         self._template = None
+        self._store = storage
         self._lock = asyncio.Lock()
         self._started = asyncio.Event()
 
     async def async_start(self):
         """檢查是否有舊資料並建立dataclass(Check if there are old data and build a dataclass)"""
         try:
-            self._dirpath = os.path.join(self.hass.config.config_dir, DATA_PATH)
-            notifications_dir = f"{self._dirpath}/notifications"
-            os.makedirs(notifications_dir, exist_ok=True)
-            self._default_file = f"{self._dirpath}/notifications/{self.entry_id}.json"
-            
             env = Environment(
-                loader=FileSystemLoader(self._dirpath),
-                autoescape=True
+                loader=FileSystemLoader(os.path.join(self.hass.config.config_dir, DATA_PATH)),
+                autoescape=True,
+                trim_blocks=True,
+                lstrip_blocks=True
             )
             self._template = await self.hass.async_add_executor_job(env.get_template, "template.html")
 
             self._notifidata = NotificationData(maxlen=self.limit)
 
-            old_data = await self.async_load_notifidata()
+            old_data = await self._store.async_load()
             if old_data:
                 self._notifidata.from_dict(old_data)
+            else:
+                _LOGGER.warning(f"{self.entry_name}: No existing data found.")
 
             self._started.set() 
 
         except Exception as e:
             _LOGGER.error(f"Initialization {self.entry_name} data Error: {e}")
-
-    async def async_load_notifidata(self):
-        """讀取資料(load data)"""
-        def load():
-            _dict = {}
-            pkl_file = f"{self._dirpath}/notifications/{self.entry_id}.pkl"
-            
-            try:
-                if os.path.exists(self._default_file):
-                    with open(self._default_file, 'rb') as f:
-                        _dict = orjson.loads(f.read())
-                    _LOGGER.debug(f"{self.entry_name}: JSON loaded.")
-                elif os.path.exists(pkl_file):
-                    import pickle
-                    with open(pkl_file, 'rb') as f:
-                        pkl_data= pickle.loads(f.read())
-                        _dict = {
-                            "msg": list(pkl_data[self.entry_id][0]),
-                            "badge": pkl_data[self.entry_id][1]
-                        }
-                    _LOGGER.debug(f"{self.entry_name}: Pickle loaded.")
-                else:
-                    _LOGGER.warning(f"{self.entry_name}: No existing data found.")
-            except Exception as e:
-                _LOGGER.error(f"{self.entry_name} load error: {e}")
-        
-            return _dict
-
-        return await self.hass.async_add_executor_job(load)
-
-    async def async_save_notifidata(self, data):
-        """保存資料(save data)"""
-        def save():
-            try:
-                with open(self._default_file, 'wb') as f:
-                    f.write(orjson.dumps(data))
-
-                _LOGGER.debug(f"{self.entry_name} data saved ")
-            except Exception as e:
-                _LOGGER.error(f"{self.entry_name} data save error: {e}")
-        
-        await self.hass.async_add_executor_job(save)
 
     async def async_send(self, call_data):
         """發送通知(send notification)"""
@@ -198,7 +153,7 @@ class NotificationHelper:
             )
             data = self._notifidata.add_message(rendered_html, badge)
             await self.async_trigger(data["msg"])
-            await self.async_save_notifidata(data)
+            await self._store.async_save(data)
         except Exception as e:
             _LOGGER.error(f"{self.entry_name} render Error: {e}")
 
@@ -213,7 +168,7 @@ class NotificationHelper:
                 data = self._notifidata.read_messages()
                 tasks = [
                     self.async_trigger(data["msg"]),
-                    self.async_save_notifidata(data),
+                    self._store.async_save(data),
                 ]
 
                 if self._ios_devices_id:
@@ -239,7 +194,7 @@ class NotificationHelper:
                 data = self._notifidata.clear_messages()
                 tasks = [
                     self.async_trigger(data["msg"]),
-                    self.async_save_notifidata(data),
+                    self._store.async_save(data),
                 ]
 
                 if self._ios_devices_id:
