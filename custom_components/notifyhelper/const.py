@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import voluptuous as vol
 
+
 DOMAIN = "notifyhelper"
 NOTIFY_DOMAIN = "notify"
 CONF_URL = "url"
@@ -17,11 +18,10 @@ SERVICES_LIST = [
     (DOMAIN, "clear"),
 ]
 DATA_PATH = "custom_components/notifyhelper"
-HELPER_VER = "2.6.4"
+HELPER_VER = "helper_ver"
 UPDATE_EVENT = "update"
 HELPER = "helper"
 PERSON = "person"
-STORAGE = "storage"
 
 BASE_URL = "/notify-helper"
 SCRIPT_URL = "/notifications-card.js"
@@ -110,11 +110,9 @@ NOTIFY_PERSON_DESCRIBE = {
             "example": "[person.1,person.2]",
             "required": True,
             "selector": {
-                "object": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "entity": {
+                    "domain": "person",
+                    "multiple": True
                 }
             }
         },

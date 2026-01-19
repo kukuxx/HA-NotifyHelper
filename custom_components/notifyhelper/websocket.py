@@ -24,7 +24,7 @@ async def register_ws(hass, helper, name):
     async def handle_subscribe_updates(hass, connection, msg):
         """Handle subscription event listeners"""
 
-        _LOGGER.debug(f"WS subscription successful: {msg}") 
+        _LOGGER.debug("WS subscription successful: %s", msg) 
 
         @callback
         def handle_notifications_update(data: dict):
@@ -33,7 +33,7 @@ async def register_ws(hass, helper, name):
                 "type": "event",
                 "event": data,
             })
-            _LOGGER.debug(f"WS send msg: {data}")
+            _LOGGER.debug("WS sent message: %s", data)
 
         unsubscribe = async_dispatcher_connect(hass, f"{UPDATE_EVENT}_{name}", handle_notifications_update)
         connection.subscriptions[msg["id"]] = unsubscribe

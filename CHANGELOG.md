@@ -1,3 +1,7 @@
+## V2.6.5
+- **Remove async lock and add async queue**
+
+
 ## V2.6.4
 - **Fix notification record method** 
 

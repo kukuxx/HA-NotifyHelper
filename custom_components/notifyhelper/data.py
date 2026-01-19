@@ -46,3 +46,9 @@ class NotificationData:
     def from_dict(self, data: dict):
         self.messages.extend(data["msg"])
         self.badge = data["badge"]
+    
+    def to_dict(self):
+        return {
+            "msg": list(self.messages),
+            "badge": self.badge,
+        }
