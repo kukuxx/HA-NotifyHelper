@@ -75,7 +75,7 @@ class NotificationHelper:
                     msg_data = None
 
                     if cmd == CMD.CLOSE:
-                        self._store.async_save(self._notifidata.to_dict())
+                        await self._store.async_save(self._notifidata.to_dict())
                         break
                     elif cmd == CMD.SEND:
                         msg_data = await self._async_send(call_data)
@@ -84,6 +84,7 @@ class NotificationHelper:
                     elif cmd == CMD.CLEAR:
                         msg_data = await self._async_clear()
                     
+                    # Save when queue is temporarily drained to reduce IO frequency.
                     if self._queue.empty() and msg_data is not None:
                         await self._store.async_save(msg_data)
                 except Exception as e:
@@ -161,8 +162,8 @@ class NotificationHelper:
                     ios_tasks = _create_send_task(self._ios_devices_id, ios_data)
                     tasks.extend(ios_tasks)
 
-            await asyncio.gather(*tasks)
             data = await self._async_render(title, message, color, badge, image, video)
+            await asyncio.gather(*tasks)
             return data
         except KeyError as e:
             _LOGGER.error("%s get call_data error: %s", self.entry_name, e)

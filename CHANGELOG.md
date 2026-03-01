@@ -1,3 +1,7 @@
+## V2.6.6
+- **Fix did not await the final save when closing the queue**
+
+
 ## V2.6.5
 - **Remove async lock and add async queue**
 

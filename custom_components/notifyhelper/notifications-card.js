@@ -268,7 +268,7 @@ class NotificationCard extends HTMLElement {
 }
 
 console.info(
-  `%c  NOTIFICATIONS-CARD  \n%c   Version:  V2.6.5   `,
+  `%c  NOTIFICATIONS-CARD  \n%c   Version:  V2.6.6   `,
   'color: orchid; font-weight: bold; background: dimgray;',
   'color: orange; font-weight: bold; background: white;'
 );
